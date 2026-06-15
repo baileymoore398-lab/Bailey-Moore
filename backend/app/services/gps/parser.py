@@ -59,7 +59,8 @@ def parse_gpx(data: bytes) -> List[TrackPoint]:
             continue
         ele: Optional[float] = None
         t: Optional[float] = None
-        for child in el:
+        hr: Optional[int] = None
+        for child in el.iter():
             name = _localname(child.tag)
             if name == "ele" and child.text:
                 try:
@@ -68,7 +69,15 @@ def parse_gpx(data: bytes) -> List[TrackPoint]:
                     pass
             elif name == "time" and child.text:
                 t = _parse_iso(child.text)
-        points.append({"lat": lat, "lon": lon, "ele": ele, "t": t})
+            elif name in ("hr", "heartrate") and child.text:
+                try:
+                    hr = int(float(child.text))
+                except ValueError:
+                    pass
+        point: TrackPoint = {"lat": lat, "lon": lon, "ele": ele, "t": t}
+        if hr is not None:
+            point["hr"] = hr
+        points.append(point)
     return points
 
 

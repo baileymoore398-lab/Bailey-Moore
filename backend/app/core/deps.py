@@ -55,6 +55,21 @@ def require_role(*roles: str):
     return checker
 
 
+def get_or_create_athlete(db: Session, user: User):
+    """Return the user's Athlete profile, creating one if missing."""
+    from app.models import Athlete
+
+    athlete = db.query(Athlete).filter(Athlete.user_id == user.id).one_or_none()
+    if athlete is None:
+        athlete = Athlete(
+            user_id=user.id,
+            display_name=user.full_name or user.email.split("@")[0],
+        )
+        db.add(athlete)
+        db.flush()
+    return athlete
+
+
 def _current_period() -> str:
     now = datetime.now(timezone.utc)
     return f"{now.year}-{now.month:02d}"
