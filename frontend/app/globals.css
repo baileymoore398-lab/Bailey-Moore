@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-bg text-white antialiased;
+    background-image:
+      radial-gradient(60% 60% at 50% 0%, rgba(34, 211, 238, 0.08), transparent 70%),
+      radial-gradient(40% 40% at 100% 100%, rgba(249, 115, 22, 0.06), transparent 70%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    @apply bg-accent/30 text-white;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .stat-value {
+    @apply text-2xl font-bold tabular-nums text-white;
+  }
+  .stat-label {
+    @apply text-xs uppercase tracking-wider text-muted;
+  }
+}
+
+/* Custom range slider styling (used by components/ui/slider.tsx). */
+.rf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+}
+.rf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #22d3ee;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+}
+.rf-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #22d3ee;
+  cursor: pointer;
+}
+
+/* MapLibre overrides for the dark theme. */
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib a {
+  background: rgba(10, 14, 20, 0.6) !important;
+  color: #8a99ad !important;
+  font-size: 10px;
+}
+.maplibregl-canvas {
+  outline: none;
+}
