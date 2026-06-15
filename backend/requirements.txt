@@ -1,0 +1,43 @@
+# --- Web framework ---
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+pydantic==2.7.4
+pydantic-settings==2.3.4
+
+# --- Database ---
+sqlalchemy==2.0.31
+alembic==1.13.2
+psycopg2-binary==2.9.9
+
+# --- Auth / security ---
+bcrypt==4.1.3
+python-jose[cryptography]==3.3.0
+slowapi==0.1.9
+
+# --- Async tasks ---
+celery==5.4.0
+redis==5.0.7
+
+# --- Storage ---
+boto3==1.34.140
+
+# --- Geo / numeric ---
+numpy==1.26.4
+scipy==1.13.1
+gpxpy==1.6.2
+
+# --- Computer vision (map photo AI) ---
+opencv-python-headless==4.10.0.84
+pillow==10.4.0
+
+# --- AI ---
+openai==1.35.10
+
+# --- Misc ---
+python-dateutil==2.9.0.post0
+httpx==0.27.0
+
+# --- Dev / test ---
+pytest==8.2.2
+ruff==0.5.1
