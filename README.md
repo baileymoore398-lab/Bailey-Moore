@@ -278,6 +278,25 @@ domains.
 
 ---
 
+## Event, coach, club & training ecosystem
+
+Beyond single-athlete analysis, RouteForge supports whole **events, coaches,
+clubs and teams**. See [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) for the full
+architecture and API reference. Highlights:
+
+- **Events** — upload IOF XML results + bulk GPX/FIT/TCX, automatic competitor
+  matching, event-wide analysis (leaderboards, leg-by-leg rankings, route-choice
+  comparison), synchronized multi-competitor replay, and public event pages.
+- **Coach dashboard** — manage athletes & teams, performance/route-efficiency/
+  time-loss/navigation trends, coach notes, and AI coaching recommendations.
+- **Club dashboard** — members, club-wide analytics, event participation,
+  rankings and statistics.
+- **Training analytics** — weekly/monthly volume, climbing/speed/HR trends,
+  TRIMP training load with acute:chronic ratio, race-readiness scoring, personal
+  bests and goal tracking.
+- **Public sharing & advanced replay** — tokenized share links, embeddable
+  replays, social-media OG previews, and speed/error/density heatmaps.
+
 ## Project status / what's implemented
 
 This repository's **infrastructure, deployment, and CI scaffolding is complete**
@@ -287,6 +306,10 @@ application itself:
 - ✅ **Core analysis pipeline is functional** — GPS ingestion, course/route
   matching, split timing, and the narrative summary work end-to-end with the
   default configuration.
+- ✅ **Event / coach / club / training ecosystem is functional** — bulk event
+  ingestion, competitor matching, event analytics, multi-replay, training load &
+  readiness, coaching trends, club analytics, and public sharing all run with
+  the default configuration (see `docs/ECOSYSTEM.md`, covered by automated tests).
 - ⚙️ **YOLO map ML weights** — automated map/control-feature detection requires
   trained model weights to be provided (not bundled; see `*.pt`/`*.onnx` in
   `.gitignore`). Without them the pipeline falls back to manual georeferencing.
