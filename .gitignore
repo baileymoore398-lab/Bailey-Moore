@@ -92,3 +92,10 @@ desktop.ini
 logs/
 tmp/
 .cache/
+
+# Runtime artifacts (local storage fallback + sqlite dev DBs)
+backend/storage_data/
+storage_data/
+*.db
+*.sqlite
+*.sqlite3
