@@ -1,0 +1,55 @@
+"use client";
+
+import * as React from "react";
+import { Badge } from "@/components/ui/badge";
+import { PricingCards } from "@/components/PricingCards";
+import { getPlans } from "@/lib/api";
+import type { BillingPlans } from "@/lib/types";
+
+export default function PricingPage() {
+  const [plans, setPlans] = React.useState<BillingPlans | null>(null);
+  const [demo, setDemo] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    (async () => {
+      const res = await getPlans();
+      setPlans(res.data);
+      setDemo(res.demo);
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <div className="container-page py-16">
+      <div className="mx-auto max-w-2xl text-center">
+        <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
+          Pick your plan
+        </h1>
+        <p className="mt-3 text-muted">
+          Start free. Upgrade when you&apos;re ready to forge faster routes.
+        </p>
+        {demo && (
+          <div className="mt-4 flex justify-center">
+            <Badge variant="warning">Demo data</Badge>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-12">
+        {loading || !plans ? (
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-80 animate-pulse rounded-2xl bg-bg-elevated"
+              />
+            ))}
+          </div>
+        ) : (
+          <PricingCards plans={plans} />
+        )}
+      </div>
+    </div>
+  );
+}

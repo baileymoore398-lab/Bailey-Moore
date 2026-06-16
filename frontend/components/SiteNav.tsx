@@ -36,6 +36,11 @@ export function SiteNav() {
     router.push("/login");
   };
 
+  // Public share / embed routes render chrome-free for clean previews + iframes.
+  if (pathname.startsWith("/s/") || pathname.startsWith("/embed/")) {
+    return null;
+  }
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-bg/70 backdrop-blur-xl">
       <div className="container-page flex h-16 items-center justify-between">
