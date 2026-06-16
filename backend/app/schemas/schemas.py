@@ -25,6 +25,34 @@ class TokenResponse(BaseModel):
     email: str
 
 
+class MeResponse(BaseModel):
+    id: str
+    email: str
+    full_name: Optional[str] = None
+    role: str
+    plan: str = "free"
+    analyses_used: int = 0
+    is_superuser: bool = False
+
+
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    display_name: Optional[str] = None
+    handle: Optional[str] = None
+    country: Optional[str] = None
+    bio: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8)
+
+
 # --- Race ---
 class RaceCreate(BaseModel):
     name: Optional[str] = None

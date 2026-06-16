@@ -46,3 +46,22 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return None
+
+
+def create_reset_token(user_id: str) -> str:
+    """Short-lived (1h) token scoped to password reset."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": user_id,
+        "purpose": "pwreset",
+        "iat": now,
+        "exp": now + timedelta(hours=1),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_reset_token(token: str) -> Optional[str]:
+    payload = decode_token(token)
+    if not payload or payload.get("purpose") != "pwreset":
+        return None
+    return payload.get("sub")
