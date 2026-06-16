@@ -1,0 +1,67 @@
+# Render.com blueprint — one-command full backend stack.
+# Deploy with: Render Dashboard → New → Blueprint → point at this repo.
+# (Frontend deploys separately on Vercel; see DEPLOYMENT.md.)
+services:
+  - type: web
+    name: routeforge-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: routeforge-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: routeforge-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+
+  - type: worker
+    name: routeforge-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: routeforge-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: routeforge-redis
+          property: connectionString
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "false"
+
+  - type: redis
+    name: routeforge-redis
+    ipAllowList: []
+    plan: starter
+
+databases:
+  - name: routeforge-db
+    databaseName: routeforge
+    plan: starter

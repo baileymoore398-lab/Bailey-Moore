@@ -145,7 +145,7 @@ npm run dev                                     # or: make frontend-dev
 
 > When running the backend on the host, override the connection hosts to
 > `localhost` instead of the compose service names, e.g.
-> `DATABASE_URL=postgresql+psycopg://routeforge:routeforge@localhost:5432/routeforge`
+> `DATABASE_URL=postgresql+psycopg2://routeforge:routeforge@localhost:5432/routeforge`
 > and `REDIS_URL=redis://localhost:6379/0`.
 
 You will also need a Celery worker for analysis jobs:
@@ -251,7 +251,7 @@ setup:
 ### Managed Postgres
 
 Use a managed Postgres 16 (Railway, RDS, Neon, Supabase). Set `DATABASE_URL`
-to the provider's connection string (keep the `postgresql+psycopg://` driver
+to the provider's connection string (keep the `postgresql+psycopg2://` driver
 prefix). Enable automated backups.
 
 ### Object storage → AWS S3

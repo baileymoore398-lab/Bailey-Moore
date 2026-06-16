@@ -44,7 +44,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql+psycopg://routeforge:routeforge@localhost:5432/routeforge_test
+      DATABASE_URL: postgresql+psycopg2://routeforge:routeforge@localhost:5432/routeforge_test
       REDIS_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/1
       CELERY_RESULT_BACKEND: redis://localhost:6379/2
