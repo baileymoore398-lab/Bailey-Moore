@@ -133,3 +133,180 @@ export interface AthleteProfile {
     time_loss_s: number;
   }>;
 }
+
+/* ===================== Auth / account ===================== */
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user_id: string;
+  email: string;
+}
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  plan: string;
+  analyses_used: number;
+  is_superuser: boolean;
+}
+
+/* ===================== Events ===================== */
+export interface EventDetail {
+  id: string;
+  name: string;
+  slug: string;
+  discipline: string;
+  status: string;
+  date?: string | null;
+  location?: string | null;
+  description?: string | null;
+  is_public: boolean;
+  entry_count: number;
+  matched_gps: number;
+  has_analysis: boolean;
+}
+
+export interface LeaderboardRow {
+  position: number | null;
+  name: string;
+  total_time_s: number | null;
+  behind_s: number | null;
+  status: string;
+}
+
+export interface LegRanking {
+  leg: number;
+  from_control: string;
+  to_control: string;
+  best_s: number | null;
+  rankings: { rank: number; name: string; time_s: number; behind_s: number }[];
+}
+
+export interface RouteComparisonLeg {
+  leg: number;
+  from_control: string;
+  to_control: string;
+  competitors: { name: string; distance_m: number; efficiency: number | null; time_loss_s: number | null }[];
+}
+
+export interface EventAnalysis {
+  event_id?: string;
+  name?: string;
+  leaderboards: Record<string, LeaderboardRow[]>;
+  leg_rankings: Record<string, LegRanking[]>;
+  route_comparison: Record<string, RouteComparisonLeg[]>;
+  stats: { courses: number; competitors: number; finishers: number; gps_matched: number };
+}
+
+export interface EventReplayCompetitor {
+  name: string;
+  course: string;
+  position: number | null;
+  color: string;
+  points: { lat: number; lon: number; speed_kmh: number; elapsed_s: number }[];
+  metrics: Metrics;
+}
+
+export interface EventReplay {
+  event_id: string;
+  course: string | null;
+  competitors: EventReplayCompetitor[];
+}
+
+/* ===================== Coach ===================== */
+export interface CoachAthlete {
+  athlete_id: string;
+  display_name: string;
+  handle: string | null;
+  races: number;
+  avg_overall: number;
+}
+
+export interface CoachTrendPoint {
+  race: string;
+  date: string | null;
+  overall: number | null;
+  navigation: number | null;
+  fitness: number | null;
+  execution: number | null;
+  route_choice: number | null;
+  route_efficiency_pct: number | null;
+  time_loss_s: number | null;
+  nav_errors: number | null;
+}
+
+export interface CoachTrends {
+  athlete_id?: string;
+  display_name?: string;
+  series: CoachTrendPoint[];
+  summary: Record<string, number>;
+  recommendations: string[];
+  focus_areas: string[];
+  athletes?: CoachAthlete[];
+}
+
+/* ===================== Club ===================== */
+export interface ClubRankingRow {
+  rank: number;
+  athlete_id: string;
+  display_name: string;
+  races: number;
+  distance_km: number;
+  avg_overall: number;
+}
+
+export interface ClubAnalytics {
+  club_id?: string;
+  name: string;
+  members: number;
+  total_races: number;
+  total_distance_km: number;
+  total_climb_m: number;
+  events_participated: number;
+  rankings: ClubRankingRow[];
+}
+
+/* ===================== Training ===================== */
+export interface VolumeBucket {
+  week?: string;
+  month?: string;
+  distance_km: number;
+  duration_h: number;
+  climb_m: number;
+  load: number;
+  sessions: number;
+}
+
+export interface TrainingAnalytics {
+  weekly_volume: VolumeBucket[];
+  monthly_volume: VolumeBucket[];
+  speed_hr_trends: { date: string | null; avg_speed_kmh: number; avg_hr: number | null; distance_km: number }[];
+  training_load: { acute_load: number; chronic_load: number; acwr: number; zone: string };
+  race_readiness: { readiness: number; load_score: number; volume_score: number; navigation_score: number; acwr: Record<string, unknown> };
+  personal_bests: { category: string; value: number; unit: string; date: string | null }[];
+  session_count: number;
+  goals?: Record<string, unknown>[];
+}
+
+/* ===================== Billing ===================== */
+export interface PlanInfo {
+  id: string;
+  name: string;
+  price_month: number;
+  features: string[];
+}
+
+export interface BillingPlans {
+  plans: PlanInfo[];
+  billing_enabled: boolean;
+}
+
+/* ===================== Replay / heatmap ===================== */
+export interface HeatmapData {
+  mode: string;
+  cell_m: number;
+  max_weight: number;
+  points: { lat: number; lon: number; weight: number; count: number; intensity?: number }[];
+}
