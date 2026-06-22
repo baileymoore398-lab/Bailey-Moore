@@ -1,0 +1,476 @@
+// PrintForge NZ — Prisma schema
+// PostgreSQL data model for the 3D printing marketplace & manufacturing platform.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Users & accounts
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  OPERATOR
+}
+
+enum AccountType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  passwordHash  String?
+  name          String?
+  phone         String?
+  role          Role        @default(CUSTOMER)
+  accountType   AccountType @default(INDIVIDUAL)
+  businessName  String?
+  gstNumber     String?
+  // OAuth linkage (Clerk / Google / Apple) — provider subject ids
+  externalId    String?     @unique
+  avatarUrl     String?
+  loyaltyPoints Int         @default(0)
+  referralCode  String?     @unique
+  referredById  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  addresses      Address[]
+  projects       Project[]
+  orders         Order[]
+  reviews        Review[]
+  customRequests CustomRequest[]
+  wishlist       WishlistItem[]
+  passwordResets PasswordReset[]
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String?
+  line1      String
+  line2      String?
+  suburb     String?
+  city       String
+  region     String?
+  postcode   String
+  country    String  @default("NZ")
+  isDefault  Boolean @default(false)
+  orders     Order[]
+  createdAt  DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Catalog: categories, materials, products
+// ---------------------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  imageUrl    String?
+  parentId    String?
+  parent      Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+}
+
+// Material profiles drive the quote engine.
+model Material {
+  id             String  @id @default(cuid())
+  code           String  @unique // PLA, PETG, TPU, ABS, ASA, NYLON, CF_NYLON
+  name           String
+  description    String?
+  // grams per cubic centimetre
+  densityGCm3    Float
+  // NZD per kilogram of filament
+  pricePerKgNzd  Float
+  // relative print speed multiplier (1.0 = baseline)
+  speedFactor    Float   @default(1.0)
+  // typical strength / use-case tags
+  strengthRating Int     @default(3) // 1-5
+  colours        String[] @default([])
+  active         Boolean  @default(true)
+  products       Product[]
+  quotes         Quote[]
+  createdAt      DateTime @default(now())
+}
+
+enum ProductType {
+  PHYSICAL
+  DIGITAL_STL
+  SERVICE
+}
+
+model Product {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  name          String
+  description   String?
+  type          ProductType @default(PHYSICAL)
+  priceNzd      Float
+  imageUrl      String?
+  images        String[]    @default([])
+  categoryId    String?
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  materialId    String?
+  defaultMaterial Material? @relation(fields: [materialId], references: [id])
+  stlFileUrl    String?
+  active        Boolean     @default(true)
+  featured      Boolean     @default(false)
+  // denormalised review aggregates
+  ratingAvg     Float       @default(0)
+  ratingCount   Int         @default(0)
+  // SEO
+  metaTitle     String?
+  metaDescription String?
+  reviews       Review[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects, uploaded files, quotes
+// ---------------------------------------------------------------------------
+
+model Project {
+  id          String       @id @default(cuid())
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  files       FileUpload[]
+  quotes      Quote[]
+}
+
+enum FileKind {
+  MODEL    // STL/OBJ/STEP/3MF
+  IMAGE    // sketch/photo
+  DOCUMENT
+}
+
+model FileUpload {
+  id          String    @id @default(cuid())
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  kind        FileKind  @default(MODEL)
+  filename    String
+  // S3 object key / public url
+  storageKey  String
+  url         String?
+  mimeType    String?
+  sizeBytes   Int       @default(0)
+  // geometry analysis results (for MODEL files)
+  volumeCm3   Float?
+  bboxX       Float?
+  bboxY       Float?
+  bboxZ       Float?
+  triangles   Int?
+  createdAt   DateTime  @default(now())
+  quotes      Quote[]
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  EXPIRED
+}
+
+// A computed quote snapshot — immutable record of the pricing inputs/outputs.
+model Quote {
+  id              String      @id @default(cuid())
+  projectId       String?
+  project         Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  fileId          String?
+  file            FileUpload? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  materialId      String
+  material        Material    @relation(fields: [materialId], references: [id])
+  infillPct       Int         @default(20)
+  layerHeightMm   Float       @default(0.2)
+  quantity        Int         @default(1)
+  // computed geometry / engine outputs
+  volumeCm3       Float
+  weightGrams     Float
+  printMinutes    Int
+  supportRequired Boolean     @default(false)
+  // cost breakdown (NZD)
+  materialCost    Float
+  machineCost     Float
+  labourCost      Float
+  shippingEstimate Float
+  subtotal        Float
+  gst             Float
+  total           Float
+  status          QuoteStatus @default(DRAFT)
+  expiresAt       DateTime?
+  createdAt       DateTime    @default(now())
+  order           Order?
+}
+
+// ---------------------------------------------------------------------------
+// Orders & production workflow
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  SUBMITTED
+  REVIEWING
+  DESIGNING
+  APPROVED
+  PRINTING
+  QUALITY_CHECK
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status          OrderStatus @default(SUBMITTED)
+  paymentStatus   PaymentStatus @default(PENDING)
+  // optional link to the originating quote (custom print jobs)
+  quoteId         String?     @unique
+  quote           Quote?      @relation(fields: [quoteId], references: [id])
+  shippingAddressId String?
+  shippingAddress Address?    @relation(fields: [shippingAddressId], references: [id])
+  // pricing
+  subtotal        Float       @default(0)
+  discount        Float       @default(0)
+  shipping        Float       @default(0)
+  gst             Float       @default(0)
+  total           Float       @default(0)
+  discountCodeId  String?
+  discountCode    DiscountCode? @relation(fields: [discountCodeId], references: [id])
+  // payment + shipping integration references
+  stripePaymentIntentId String?
+  carrier         String?
+  trackingNumber  String?
+  trackingUrl     String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items      OrderItem[]
+  history    OrderStatusHistory[]
+  printJobs  PrintJob[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  lineTotal   Float
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Printer fleet management
+// ---------------------------------------------------------------------------
+
+enum PrinterBrand {
+  BAMBU_LAB
+  PRUSA
+  CREALITY
+  VORON
+}
+
+enum PrinterStatus {
+  IDLE
+  PRINTING
+  MAINTENANCE
+  OFFLINE
+}
+
+model Printer {
+  id                String        @id @default(cuid())
+  name              String
+  brand             PrinterBrand
+  model             String?
+  status            PrinterStatus @default(IDLE)
+  // build volume mm
+  buildX            Int           @default(256)
+  buildY            Int           @default(256)
+  buildZ            Int           @default(256)
+  loadedMaterialId  String?
+  filamentRemainingG Int          @default(1000)
+  successRate       Float         @default(0.95)
+  lastMaintenance   DateTime?
+  nextMaintenance   DateTime?
+  createdAt         DateTime      @default(now())
+  printJobs         PrintJob[]
+}
+
+enum PrintJobStatus {
+  QUEUED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+model PrintJob {
+  id            String         @id @default(cuid())
+  orderId       String?
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  printerId     String?
+  printer       Printer?       @relation(fields: [printerId], references: [id], onDelete: SetNull)
+  status        PrintJobStatus @default(QUEUED)
+  estMinutes    Int            @default(0)
+  progressPct   Int            @default(0)
+  queuePosition Int            @default(0)
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime       @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Custom design requests
+// ---------------------------------------------------------------------------
+
+enum RequestStatus {
+  NEW
+  IN_REVIEW
+  QUOTED
+  ACCEPTED
+  DECLINED
+  COMPLETED
+}
+
+model CustomRequest {
+  id          String        @id @default(cuid())
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title       String
+  description String
+  category    String?
+  // uploaded reference images / sketches (urls)
+  attachments String[]      @default([])
+  status      RequestStatus @default(NEW)
+  // admin response
+  priceEstimate Float?
+  timelineDays  Int?
+  adminNotes    String?
+  contactEmail  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+model Review {
+  id            String   @id @default(cuid())
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  authorName    String
+  rating        Int      // 1-5 overall
+  printQuality  Int?     // 1-5
+  designQuality Int?     // 1-5
+  title         String?
+  body          String?
+  photos        String[] @default([])
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Marketing
+// ---------------------------------------------------------------------------
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model DiscountCode {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  type        DiscountType @default(PERCENT)
+  value       Float
+  minSpend    Float?
+  maxUses     Int?
+  uses        Int          @default(0)
+  active      Boolean      @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+  orders      Order[]
+}
+
+model GiftCard {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  initialNzd  Float
+  balanceNzd  Float
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+}
