@@ -1,5 +1,11 @@
 # RouteForge
 
+> 📄 **Seeing this page on `*.github.io`?** That's GitHub Pages rendering this
+> README — **not** the app. RouteForge is a full-stack app (Next.js + FastAPI +
+> Postgres/Redis) that cannot run on GitHub Pages. To deploy the real app, follow
+> **[DEPLOY_QUICKSTART.md](DEPLOY_QUICKSTART.md)** (Vercel for the frontend +
+> Railway/Render for the backend).
+
 **AI-powered race analysis for orienteering, mountain-bike orienteering (MTBO),
 rogaining, adventure racing, and trail running.**
 

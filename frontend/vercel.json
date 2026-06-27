@@ -2,14 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm ci",
-  "regions": ["arn1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@routeforge_api_url"
-  },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_API_URL": "@routeforge_api_url"
-    }
-  }
+  "installCommand": "npm ci"
 }
