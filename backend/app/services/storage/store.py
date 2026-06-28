@@ -31,7 +31,21 @@ class StorageBackend:
 class LocalStorage(StorageBackend):
     def __init__(self, root: str):
         self.root = Path(root)
-        self.root.mkdir(parents=True, exist_ok=True)
+        try:
+            self.root.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            # The configured dir may be unwritable (e.g. a non-root container
+            # user can't create ./storage_data in a root-owned workdir). Fall
+            # back to a guaranteed-writable temp dir so uploads still work.
+            import tempfile
+
+            fallback = Path(tempfile.gettempdir()) / "routeforge_storage"
+            fallback.mkdir(parents=True, exist_ok=True)
+            logger.warning(
+                "LOCAL_STORAGE_DIR %s not writable (%s); using %s",
+                root, exc, fallback,
+            )
+            self.root = fallback
 
     def _path(self, key: str) -> Path:
         p = (self.root / key).resolve()
