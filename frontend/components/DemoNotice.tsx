@@ -8,8 +8,26 @@ import { disableDemo, isDemoMode } from "@/lib/demo";
  *   1. The user explicitly enabled demo mode → offer an "Exit demo" button.
  *   2. The backend was unreachable (auto-fallback) → explain how to connect it.
  */
-export function DemoNotice({ context = "data" }: { context?: string }) {
+export function DemoNotice({
+  context = "data",
+  sampleRace = false,
+}: {
+  context?: string;
+  sampleRace?: boolean;
+}) {
   const userEnabled = isDemoMode();
+
+  // A built-in sample/demo race (e.g. the "See a live demo" race) is always
+  // example data by design — never alarm the user about the backend here.
+  if (sampleRace) {
+    return (
+      <div className="mb-6 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent">
+        🎬 <strong>This is a sample race</strong> for demonstration — example
+        track and AI report. To see your own, go to{" "}
+        <strong>Analyze</strong> and upload a GPX file.
+      </div>
+    );
+  }
 
   if (userEnabled) {
     return (

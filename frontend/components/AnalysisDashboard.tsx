@@ -40,9 +40,11 @@ const severityVariant = {
 export function AnalysisDashboard({
   analysis,
   demo,
+  sampleRace = false,
 }: {
   analysis: Analysis;
   demo: boolean;
+  sampleRace?: boolean;
 }) {
   const [cursor, setCursor] = React.useState(0);
   const [highlightLeg, setHighlightLeg] = React.useState<number | null>(null);
@@ -63,7 +65,7 @@ export function AnalysisDashboard({
 
   return (
     <div className="container-page py-10">
-      {demo && <DemoNotice context="race analysis" />}
+      {demo && <DemoNotice context="race analysis" sampleRace={sampleRace} />}
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
