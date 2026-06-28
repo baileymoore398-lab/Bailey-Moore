@@ -8,6 +8,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReadinessGauge } from "@/components/ReadinessGauge";
 import { LoadIndicator } from "@/components/LoadIndicator";
+import { DemoNotice } from "@/components/DemoNotice";
 import {
   getAthlete,
   getMe,
@@ -101,6 +102,7 @@ export default function DashboardPage() {
 
   return (
     <div className="container-page py-10">
+      {demo && <DemoNotice context="dashboard" />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black tracking-tight">

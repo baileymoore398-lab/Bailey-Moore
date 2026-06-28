@@ -48,8 +48,8 @@ export const sampleRaces: Race[] = [
 
 export const sampleAthlete: AthleteProfile = {
   id: "ath_demo_001",
-  name: "Travis Moore",
-  email: "travis_keith_moore@hotmail.com",
+  name: "Alex Rainsford",
+  email: "alex@example.com",
   avatar_url: null,
   stats: {
     races: 28,

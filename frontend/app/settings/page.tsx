@@ -167,7 +167,7 @@ export default function SettingsPage() {
                 label="Handle"
                 value={form.handle}
                 onChange={(v) => update("handle", v)}
-                placeholder="travis"
+                placeholder="alex"
               />
               <Field
                 label="Country"

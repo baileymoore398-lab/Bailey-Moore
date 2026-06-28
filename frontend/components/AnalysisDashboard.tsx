@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScoresRadar } from "@/components/ScoresRadar";
 import { ReplayControls } from "@/components/ReplayControls";
+import { DemoNotice } from "@/components/DemoNotice";
 import {
   cn,
   formatDistance,
@@ -62,6 +63,7 @@ export function AnalysisDashboard({
 
   return (
     <div className="container-page py-10">
+      {demo && <DemoNotice context="race analysis" />}
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
