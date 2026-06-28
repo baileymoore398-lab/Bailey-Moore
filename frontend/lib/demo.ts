@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Explicit, opt-in demo mode.
  *

@@ -1,8 +1,7 @@
-"use client";
-
-// Lightweight client-side session management. The backend issues a JWT that we
-// store in localStorage and attach to API requests via the Authorization
-// header. Guarded for SSR (no localStorage on the server).
+// Lightweight session management. The backend issues a JWT that we store in
+// localStorage and attach to API requests via the Authorization header. These
+// are plain isomorphic helpers (guarded for SSR) — NOT a "use client" module,
+// so they remain callable from Server Components via the API client.
 
 const TOKEN_KEY = "rf_token";
 const USER_KEY = "rf_user";
