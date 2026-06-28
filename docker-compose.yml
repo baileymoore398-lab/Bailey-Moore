@@ -137,6 +137,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      SERVICE_ROLE: worker
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]
     depends_on:
       db:

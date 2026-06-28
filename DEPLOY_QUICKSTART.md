@@ -40,9 +40,14 @@ Do the **backend first** (you need its URL for the frontend).
    `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `S3_REGION`,
    `STRIPE_SECRET_KEY`.
 7. **Add the worker** (for background analysis/video): **New → GitHub Repo →** same
-   repo → **Settings → Root Directory = `backend`**, and set **Custom Start Command**:
-   `celery -A app.workers.celery_app worker --loglevel=info`. Give it the same
-   `DATABASE_URL`/`REDIS_URL`/`ENV` variables.
+   repo → **Settings → Root Directory = `backend`**. Do **NOT** set a custom start
+   command — instead add one variable: **`SERVICE_ROLE=worker`**. The image's
+   entrypoint then runs Celery automatically (web vs worker is chosen by this var,
+   so both services share the exact same build). The worker MUST also have the same
+   **`DATABASE_URL`**, **`REDIS_URL`**, **`ENV=production`** and
+   **`CELERY_TASK_ALWAYS_EAGER=false`** variables as the API (reference the Postgres
+   and Redis services). Missing `REDIS_URL` (broker) or `DATABASE_URL` is the #1
+   cause of a crash-looping worker.
 8. On the API service, open **Settings → Networking → Generate Domain.** Copy the
    URL, e.g. `https://routeforge-api-production.up.railway.app`.
 9. Verify: open `https://<that-url>/health` → you should see
@@ -96,6 +101,15 @@ with the exact `https://…` URLs and no trailing slash.
 ## Common gotchas
 - **You see the README, not the app** → you opened the GitHub Pages URL
   (`*.github.io`). Use the **Vercel** URL instead, and disable Pages.
+- **`routeforge-worker` keeps crashing / restarting** → almost always one of:
+  (a) it's missing **`REDIS_URL`** (Celery can't reach its broker — add a
+  reference to your Redis service), (b) it's missing **`DATABASE_URL`** (it now
+  fails fast with a clear message), or (c) it still has an old custom start
+  command or healthcheck. Fix: redeploy on the latest commit, set
+  **`SERVICE_ROLE=worker`** + `DATABASE_URL` + `REDIS_URL` + `ENV=production` +
+  `CELERY_TASK_ALWAYS_EAGER=false`, and remove any custom start command /
+  healthcheck on the worker (workers aren't web services — they shouldn't have a
+  `/health` check).
 - **"Environment Variable references Secret which does not exist"** → you're on an
   old `vercel.json`; pull latest (it no longer references secrets) and set
   `NEXT_PUBLIC_API_URL` directly in the Vercel dashboard.

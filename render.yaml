@@ -40,8 +40,9 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
     envVars:
+      - key: SERVICE_ROLE
+        value: worker
       - key: ENV
         value: production
       - key: DATABASE_URL
