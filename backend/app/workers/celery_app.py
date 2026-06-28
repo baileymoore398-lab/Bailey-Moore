@@ -29,6 +29,9 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     # Recycle a child if it grows past this RSS (KB) to bound memory use.
     worker_max_memory_per_child=350_000,
+    # Keep retrying the broker connection on startup (and silence the Celery 6.0
+    # PendingDeprecationWarning about this setting).
+    broker_connection_retry_on_startup=True,
 )
 
 # Ensure task modules are imported and registered.
