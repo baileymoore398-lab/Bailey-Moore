@@ -18,7 +18,7 @@ interface Slot {
 }
 
 const steps = [
-  { kind: "map" as const, n: 1, label: "Map", title: "Map photo / image", accept: "image/*", hint: "PNG or JPG of your printed map", required: true },
+  { kind: "map" as const, n: 1, label: "Map", title: "Map photo (optional)", accept: "image/*", hint: "PNG or JPG of your printed map — optional", required: false },
   { kind: "gps" as const, n: 2, label: "GPS", title: "GPS track", accept: ".gpx,.fit,.tcx", hint: ".gpx, .fit or .tcx", required: true },
   { kind: "splits" as const, n: 3, label: "Splits", title: "Splits (optional)", accept: ".csv,.xml", hint: ".csv or .xml from your timing system", required: false },
 ];
@@ -41,7 +41,8 @@ export default function UploadPage() {
   const onFile = (kind: UploadKind, file: File | null) =>
     setSlot(kind, { file, state: file ? "ready" : "idle", error: null });
 
-  const canGenerate = slots.map.file && slots.gps.file && !generating;
+  // A GPS track is the only hard requirement; map + splits are optional.
+  const canGenerate = slots.gps.file && !generating;
 
   async function handleGenerate() {
     setGenerating(true);
@@ -65,11 +66,15 @@ export default function UploadPage() {
       await analyzeRace(race.id);
       router.push(`/races/${race.id}`);
     } catch (e) {
-      // Backend offline: still let the user view the demo analysis.
+      // Surface the real failure instead of silently showing the demo race.
+      const msg = (e as Error)?.message || "";
       setGenError(
-        "Could not reach the backend. Showing a demo analysis instead."
+        "Couldn't analyze your race — the app can't reach its backend API, so " +
+          "nothing was saved. Most likely NEXT_PUBLIC_API_URL isn't set on the " +
+          "Vercel project (or you set it but haven't redeployed), or the backend " +
+          "domain isn't in CORS_ORIGINS. Fix that, redeploy, and try again." +
+          (msg ? ` (Details: ${msg})` : "")
       );
-      setTimeout(() => router.push(`/races/rc_demo_001`), 1200);
     } finally {
       setGenerating(false);
     }
@@ -218,7 +223,9 @@ export default function UploadPage() {
                 })}
               </div>
               {genError && (
-                <p className="mt-4 text-sm text-amber-300">{genError}</p>
+                <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-200">
+                  {genError}
+                </div>
               )}
               <div className="mt-6 flex justify-between">
                 <Button variant="ghost" onClick={() => setCurrent(steps.length - 1)}>
