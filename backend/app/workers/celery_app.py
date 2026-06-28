@@ -21,6 +21,14 @@ celery_app.conf.update(
     accept_content=["json"],
     task_track_started=True,
     worker_max_tasks_per_child=50,
+    # Cap worker processes regardless of how the worker is launched. Without this,
+    # Celery defaults to one process PER CPU CORE — on a 48-core host that spawns
+    # 48 prefork children, each loading NumPy/OpenCV/SciPy, which OOM-kills the
+    # container. The analysis is memory-bound, so a small pool is correct.
+    worker_concurrency=settings.CELERY_CONCURRENCY,
+    worker_prefetch_multiplier=1,
+    # Recycle a child if it grows past this RSS (KB) to bound memory use.
+    worker_max_memory_per_child=350_000,
 )
 
 # Ensure task modules are imported and registered.

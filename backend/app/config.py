@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: str | None = None
     CELERY_RESULT_BACKEND: str | None = None
+    # Worker process count. Kept small because each prefork child loads the heavy
+    # CV/numeric stack; Celery's default (one per CPU core) OOM-kills the worker
+    # on many-core hosts. Override via env for larger instances.
+    CELERY_CONCURRENCY: int = 2
     # Run tasks inline (no broker) — handy for local dev / tests.
     CELERY_TASK_ALWAYS_EAGER: bool = True
 
