@@ -28,6 +28,7 @@ import {
   sampleTrainingAnalytics,
 } from "./sampleData";
 import { authHeaders } from "./auth";
+import { isDemoMode } from "./demo";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000";
@@ -90,17 +91,23 @@ export async function request<T>(
 }
 
 /**
- * Run a request and, if it fails for any reason, resolve with bundled demo
- * data so the UI is fully demoable without a running backend.
+ * Resolve REAL backend data by default. Demo (bundled sample) data is returned
+ * only when the user has explicitly enabled demo mode, or — as a clearly
+ * labelled fallback — when the backend cannot be reached at all (so the page
+ * still renders instead of crashing). The `demo` flag drives the on-page notice.
  */
 async function withFallback<T>(
   fn: () => Promise<T>,
   fallback: T
 ): Promise<{ data: T; demo: boolean }> {
+  if (isDemoMode()) {
+    return { data: fallback, demo: true };
+  }
   try {
     const data = await fn();
     return { data, demo: false };
   } catch {
+    // Backend unreachable: render demo data but flag it so the UI explains why.
     return { data: fallback, demo: true };
   }
 }

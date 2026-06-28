@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { DemoButton } from "@/components/DemoButton";
 
 const features = [
   {
@@ -68,11 +69,11 @@ export default function LandingPage() {
                 Analyze a race →
               </Button>
             </Link>
-            <Link href="/races/rc_demo_001">
-              <Button variant="outline" size="lg">
-                See a live demo
-              </Button>
-            </Link>
+            <DemoButton
+              label="See a live demo"
+              to="/races/rc_demo_001"
+              className="inline-flex items-center justify-center rounded-lg border border-border px-6 py-3 text-base font-semibold text-white transition hover:border-accent hover:text-accent"
+            />
           </div>
         </motion.div>
 
