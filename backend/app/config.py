@@ -97,6 +97,24 @@ class Settings(BaseSettings):
             v = "postgresql+psycopg2://" + v[len("postgresql://"):]
         return v
 
+    @field_validator("REDIS_URL", mode="before")
+    @classmethod
+    def _normalize_redis_url(cls, v):
+        # A blank value (e.g. an unresolved Railway reference) would leave Celery
+        # with a hostless broker ("No hostname… reverting to localhost"). Fall
+        # back to the sane local default so the URL is always well-formed.
+        if v is None or not str(v).strip():
+            return "redis://localhost:6379/0"
+        return str(v).strip()
+
+    @field_validator("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before")
+    @classmethod
+    def _blank_celery_to_none(cls, v):
+        # Treat blank overrides as unset so they fall back to REDIS_URL.
+        if v is None or not str(v).strip():
+            return None
+        return str(v).strip()
+
     @property
     def celery_broker(self) -> str:
         return self.CELERY_BROKER_URL or self.REDIS_URL
