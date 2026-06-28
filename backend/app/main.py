@@ -32,10 +32,18 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
+# CORS. Set CORS_ORIGINS to your frontend URL(s), or "*" to allow any origin
+# (handy while wiring up a deployment — auth uses Bearer tokens, not cookies, so
+# credentials aren't required). CORS_ORIGIN_REGEX additionally allows matching
+# origins, e.g. "https://.*\\.vercel\\.app" to permit all Vercel deployments.
+_cors_origins = settings.cors_origins
+_allow_all_origins = "*" in _cors_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"] if _allow_all_origins else _cors_origins,
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
+    # Browsers reject "*" together with credentials; we don't need credentials.
+    allow_credentials=not _allow_all_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

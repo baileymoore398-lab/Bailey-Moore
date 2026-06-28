@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     # ``cors_origins`` property to get the parsed list. Accepts a comma-separated
     # string or a JSON array.
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    # Optional regex to allow matching origins, e.g. r"https://.*\.vercel\.app".
+    CORS_ORIGIN_REGEX: str | None = None
 
     # --- Rate limiting ---
     RATE_LIMIT_DEFAULT: str = "120/minute"
