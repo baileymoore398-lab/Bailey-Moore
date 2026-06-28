@@ -6,6 +6,7 @@ via environment variables / secrets.
 """
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from typing import List
 
@@ -33,7 +34,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     # --- CORS ---
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # Stored as a raw string so pydantic-settings never tries to JSON-parse it
+    # (a List-typed env var must be valid JSON, so a bare URL like
+    # "https://app.example" would raise SettingsError and crash startup). Use the
+    # ``cors_origins`` property to get the parsed list. Accepts a comma-separated
+    # string or a JSON array.
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # --- Rate limiting ---
     RATE_LIMIT_DEFAULT: str = "120/minute"
@@ -72,12 +78,18 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def _split_origins(cls, v):
-        if isinstance(v, str):
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return v
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parsed CORS allow-list. Accepts comma-separated or a JSON array."""
+        raw = (self.CORS_ORIGINS or "").strip()
+        if not raw:
+            return []
+        if raw.startswith("["):
+            try:
+                return [str(x).strip() for x in json.loads(raw) if str(x).strip()]
+            except (ValueError, TypeError):
+                pass
+        return [o.strip() for o in raw.split(",") if o.strip()]
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
