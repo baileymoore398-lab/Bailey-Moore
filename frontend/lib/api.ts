@@ -60,20 +60,31 @@ export async function request<T>(
 ): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_V1}${path}`;
   let res: Response;
-  try {
-    res = await fetch(url, {
-      method: options.method ?? "GET",
-      body: options.body,
-      headers: { ...authHeaders(), ...options.headers },
-      signal: options.signal,
-      cache: "no-store",
-    });
-  } catch (err) {
-    throw new ApiError(
-      `Network error reaching ${url}: ${(err as Error).message}`,
-      0
-    );
+  // Retry transient network failures (e.g. a host that briefly restarts /
+  // throttles mid-session and drops the connection) a couple of times.
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch(url, {
+        method: options.method ?? "GET",
+        body: options.body,
+        headers: { ...authHeaders(), ...options.headers },
+        signal: options.signal,
+        cache: "no-store",
+      });
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err as Error;
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+      }
+    }
   }
+  if (lastErr) {
+    throw new ApiError(`Network error reaching ${url}: ${lastErr.message}`, 0);
+  }
+  res = res!;
 
   if (!res.ok) {
     let detail = res.statusText;
