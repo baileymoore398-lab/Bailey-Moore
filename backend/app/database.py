@@ -11,6 +11,18 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
+# Guard against a misconfigured production database. If DATABASE_URL is unset or
+# empty in production it normalizes to the SQLite default (see config.py), which
+# would silently give the API and worker separate ephemeral databases. Fail loudly
+# with an actionable message instead.
+if settings.ENV == "production" and settings.DATABASE_URL.startswith("sqlite"):
+    raise RuntimeError(
+        "DATABASE_URL is not set (resolved to SQLite) but ENV=production. "
+        "Set DATABASE_URL to your Postgres connection string. On Railway, open the "
+        "API service → Variables and add a reference to your Postgres service, e.g. "
+        "DATABASE_URL=${{Postgres.DATABASE_URL}} (match your Postgres service name)."
+    )
+
 _connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     # Needed for SQLite when used across threads (uvicorn workers).

@@ -13,6 +13,11 @@ _tmpdir = tempfile.mkdtemp(prefix="rf_test_")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmpdir}/test.db"
 os.environ["LOCAL_STORAGE_DIR"] = f"{_tmpdir}/storage"
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
+os.environ["ENV"] = "test"
+# Force local-disk storage so the suite is hermetic regardless of any ambient
+# AWS_* credentials in the environment (CI runners / proxies may inject them).
+for _v in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_ENDPOINT"):
+    os.environ.pop(_v, None)
 
 
 @pytest.fixture(scope="session")

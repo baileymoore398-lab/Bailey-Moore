@@ -75,6 +75,28 @@ class Settings(BaseSettings):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalize_db_url(cls, v):
+        """Normalize provider-supplied connection strings.
+
+        * Trim whitespace; empty/blank → fall back to the SQLite default so the
+          app still boots (a clear error is raised later if a real DB is needed).
+        * Rewrite the bare ``postgres://`` / ``postgresql://`` schemes that
+          Railway/Render/Heroku hand out to the explicit ``postgresql+psycopg2``
+          dialect matching the installed driver.
+        """
+        if v is None:
+            return "sqlite:///./routeforge.db"
+        v = str(v).strip()
+        if not v:
+            return "sqlite:///./routeforge.db"
+        if v.startswith("postgres://"):
+            v = "postgresql+psycopg2://" + v[len("postgres://"):]
+        elif v.startswith("postgresql://"):
+            v = "postgresql+psycopg2://" + v[len("postgresql://"):]
+        return v
+
     @property
     def celery_broker(self) -> str:
         return self.CELERY_BROKER_URL or self.REDIS_URL
