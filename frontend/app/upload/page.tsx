@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { analyzeRace, createRace, uploadFile } from "@/lib/api";
+import { downscaleImage } from "@/lib/image";
 import type { UploadKind } from "@/lib/types";
 
 interface Slot {
@@ -55,7 +56,10 @@ export default function UploadPage() {
         if (!slot.file) continue;
         setSlot(kind, { state: "uploading" });
         try {
-          await uploadFile(race.id, kind, slot.file);
+          // Shrink large map photos so the upload doesn't time out.
+          const toSend =
+            kind === "map" ? await downscaleImage(slot.file) : slot.file;
+          await uploadFile(race.id, kind, toSend);
           setSlot(kind, { state: "done" });
         } catch (e) {
           setSlot(kind, { state: "error", error: (e as Error).message });
