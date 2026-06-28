@@ -114,9 +114,15 @@ async function withFallback<T>(
 
 /* ----------------------------- Races ----------------------------- */
 
-export async function createRace(name?: string): Promise<Race> {
+export async function createRace(
+  name?: string,
+  discipline = "orienteering"
+): Promise<Race> {
+  // Always send fields: an empty multipart body fails to parse server-side
+  // ("There was an error parsing the body" / 400).
   const form = new FormData();
-  if (name) form.append("name", name);
+  form.append("name", name && name.trim() ? name.trim() : "Untitled race");
+  form.append("discipline", discipline);
   return request<Race>("/races", { method: "POST", body: form });
 }
 
