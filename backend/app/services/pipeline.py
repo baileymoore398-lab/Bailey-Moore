@@ -35,8 +35,40 @@ from app.services.coach.engine import generate_coach_report
 from app.services.gps.analysis import GpsAnalysisResult, analyze_track
 from app.services.report.scoring import compute_scores
 from app.services.routechoice.analysis import segment_by_controls
-from app.services.splits.analysis import analyze_splits
+from app.services.splits.analysis import _select_athlete, analyze_splits
 from app.services.storage.store import get_storage
+
+
+def _controls_from_splits(split_data: dict, athlete_name, track) -> list[dict]:
+    """Place controls accurately using split times + the GPS track.
+
+    Each control was punched at ``race_start + cumulative_time``; we pin it to the
+    GPS point recorded closest to that moment. This is the reliable way to locate
+    controls (it doesn't depend on the rough map-photo alignment), as long as the
+    GPS track carries timestamps and the splits belong to this run.
+    """
+    competitors = (split_data or {}).get("competitors", [])
+    target = _select_athlete(competitors, athlete_name)
+    if not target or not track or track[0].t is None:
+        return []
+    start_t = track[0].t
+    splits = [s for s in target["splits"] if s.get("cumulative_s") is not None]
+    if not splits:
+        return []
+    controls: list[dict] = [{
+        "order": 0, "code": "S", "kind": "start",
+        "lat": round(track[0].lat, 6), "lon": round(track[0].lon, 6), "confidence": 0.9,
+    }]
+    n = len(splits)
+    for i, s in enumerate(splits, start=1):
+        target_t = start_t + s["cumulative_s"]
+        pt = min(track, key=lambda p: abs((p.t if p.t is not None else start_t) - target_t))
+        kind = "finish" if (str(s["code"]).upper() == "F" or i == n) else "control"
+        controls.append({
+            "order": i, "code": str(s["code"]), "kind": kind,
+            "lat": round(pt.lat, 6), "lon": round(pt.lon, 6), "confidence": 0.85,
+        })
+    return controls
 
 logger = logging.getLogger(__name__)
 
@@ -96,23 +128,36 @@ def run_analysis(race_id: str, db: Session) -> Analysis:
         if race.gps_track and race.gps_track.points:
             gps = analyze_track(race.gps_track.points)
 
-        # --- 2/3. Map CV + alignment ---
+        athlete_name = (race.owner.full_name if race.owner else None)
+
+        # --- 2/3. Controls ---
         controls_geo: list[dict] = []
         map_conf = ocr_conf = align_conf = 0.0
+        # (a) Preferred: place controls from split times matched to GPS timestamps
+        #     (accurate; independent of the rough map-photo alignment).
+        if race.split_set and race.split_set.data and gps is not None:
+            controls_geo = _controls_from_splits(
+                race.split_set.data, athlete_name, gps.points
+            )
+            if controls_geo:
+                align_conf = 0.85
+        # Always run the CV pass for the corrected/enhanced map image + OCR.
         controls_px, start_px, map_conf, ocr_conf = _run_map_cv(race, db)
-        if controls_px and gps is not None:
+        # (b) Fallback: estimate control positions from the map photo alignment
+        #     (only when we couldn't derive them from splits).
+        if not controls_geo and controls_px and gps is not None:
             from app.services.mapcv.alignment import align_controls_to_gps
 
             align = align_controls_to_gps(controls_px, gps.points, start_px)
             controls_geo = align.controls_geo
             align_conf = align.confidence
+        if controls_geo:
             _persist_controls(race, controls_geo, db)
 
         # --- 4. Splits ---
         split_result = None
         split_legs_json: list[dict] = []
         if race.split_set and race.split_set.data:
-            athlete_name = (race.owner.full_name if race.owner else None)
             split_result = analyze_splits(race.split_set.data, athlete_name)
             split_legs_json = split_result.legs_json()
 

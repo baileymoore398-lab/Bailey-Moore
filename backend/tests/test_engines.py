@@ -99,3 +99,29 @@ def test_umeyama_recovers_transform():
     assert abs(c - 2.0) < 1e-6
     recovered = (c * (rr @ src.T).T) + t
     assert np.allclose(recovered, dst, atol=1e-6)
+
+
+def test_controls_from_splits_placement():
+    """Controls are pinned to the GPS position at each split's punch time."""
+    import datetime
+
+    from app.services.gps.analysis import analyze_track
+    from app.services.pipeline import _controls_from_splits
+
+    t0 = datetime.datetime(2026, 6, 1, 9, 0, tzinfo=datetime.timezone.utc).timestamp()
+    pts = []
+    lon = 10.0
+    for i in range(201):
+        lon += 0.0001
+        pts.append({"lat": 60.0, "lon": lon, "ele": 100.0, "t": t0 + i})
+    g = analyze_track(pts)
+    split_data = {"competitors": [{"name": "Me", "splits": [
+        {"code": "101", "cumulative_s": 50, "time_s": 50},
+        {"code": "102", "cumulative_s": 120, "time_s": 70},
+        {"code": "F", "cumulative_s": 200, "time_s": 80},
+    ]}]}
+    controls = _controls_from_splits(split_data, "Me", g.points)
+    assert [c["code"] for c in controls] == ["S", "101", "102", "F"]
+    assert controls[1]["kind"] == "control" and controls[3]["kind"] == "finish"
+    # Control 101 punched at 50s -> GPS lon at t0+50 (lon advanced 51 steps).
+    assert abs(controls[1]["lon"] - (10.0 + 0.0001 * 51)) < 1e-4
