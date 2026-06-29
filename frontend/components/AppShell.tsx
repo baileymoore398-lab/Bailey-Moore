@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 
 // Renders the global nav + content padding for app routes, but renders public
 // share/embed routes chrome-free (no nav, no top padding) for clean previews
@@ -18,6 +19,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <>
       <SiteNav />
       <main className="pt-16">{children}</main>
+      <SiteFooter />
     </>
   );
 }
