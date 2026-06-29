@@ -21,7 +21,7 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition hover:bg-accent/20"
           >
-            <span aria-hidden>❤</span> Support RouteForge
+            Support RouteForge
           </a>
           <p className="text-xs text-muted">
             AI race analysis &middot; built by{" "}

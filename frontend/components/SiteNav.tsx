@@ -77,7 +77,7 @@ export function SiteNav() {
             title="Support RouteForge"
             className="mr-1 hidden items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent sm:inline-flex"
           >
-            <span aria-hidden>❤</span> Support
+            Support
           </a>
           {user ? (
             <>
