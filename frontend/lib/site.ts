@@ -13,3 +13,9 @@ export const DONATE_URL =
 // Address the Contact form sends to (and shown as a direct mailto fallback).
 export const CONTACT_EMAIL =
   process.env.NEXT_PUBLIC_CONTACT_EMAIL || "route.forge.official@gmail.com";
+
+// Formspree endpoint the contact form POSTs to. When set, messages are
+// delivered without opening the visitor's email client. Override with
+// NEXT_PUBLIC_FORMSPREE_URL. Set to "" to fall back to the mailto flow.
+export const FORMSPREE_URL =
+  process.env.NEXT_PUBLIC_FORMSPREE_URL ?? "https://formspree.io/f/mwvdqvzl";
