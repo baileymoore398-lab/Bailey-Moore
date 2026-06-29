@@ -10,19 +10,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Orienteering palette: warm forest-dark base + course-magenta accent
+        // (the IOF course/control overprint colour), contour-brown and
+        // vegetation-green secondaries.
         bg: {
-          DEFAULT: "#0a0e14",
-          soft: "#0f141c",
-          card: "#131a24",
-          elevated: "#1a2230",
+          DEFAULT: "#0c0e0a",
+          soft: "#11140d",
+          card: "#171b12",
+          elevated: "#1f2418",
         },
-        border: "#222c3a",
+        border: "#2c3322",
         accent: {
-          DEFAULT: "#22d3ee",
-          hot: "#f97316",
-          lime: "#a3e635",
+          DEFAULT: "#e6007e",
+          hot: "#c6692f",
+          lime: "#5aa84a",
         },
-        muted: "#8a99ad",
+        muted: "#9aa089",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

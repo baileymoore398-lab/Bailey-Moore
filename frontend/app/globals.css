@@ -12,10 +12,15 @@
   }
   body {
     @apply bg-bg text-white antialiased;
+    /* Topographic contour texture (orienteering map) + soft course-magenta and
+       contour-brown glows. Contours tile; gradients are fixed. */
     background-image:
-      radial-gradient(60% 60% at 50% 0%, rgba(34, 211, 238, 0.08), transparent 70%),
-      radial-gradient(40% 40% at 100% 100%, rgba(249, 115, 22, 0.06), transparent 70%);
-    background-attachment: fixed;
+      url("/contours.svg"),
+      radial-gradient(60% 60% at 50% 0%, rgba(230, 0, 126, 0.07), transparent 70%),
+      radial-gradient(45% 45% at 100% 100%, rgba(198, 105, 47, 0.07), transparent 70%);
+    background-repeat: repeat, no-repeat, no-repeat;
+    background-size: 720px 480px, auto, auto;
+    background-attachment: fixed, fixed, fixed;
   }
   ::selection {
     @apply bg-accent/30 text-white;
@@ -49,16 +54,16 @@
   height: 16px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 3px solid #22d3ee;
+  border: 3px solid #e6007e;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 10px rgba(230, 0, 126, 0.6);
 }
 .rf-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 3px solid #22d3ee;
+  border: 3px solid #e6007e;
   cursor: pointer;
 }
 

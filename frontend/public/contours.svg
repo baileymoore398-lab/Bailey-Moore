@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480">
+  <!-- Tileable topographic contour pattern (orienteering map style). -->
+  <g fill="none" stroke="#b5824f" stroke-width="1.2" stroke-opacity="0.22" stroke-linecap="round">
+    <path d="M0,30 C120,16 240,16 360,30 C480,44 600,44 720,30"/>
+    <path d="M0,90 C120,76 240,76 360,90 C480,104 600,104 720,90"/>
+    <path d="M0,150 C120,136 240,136 360,150 C480,164 600,164 720,150"/>
+    <path d="M0,210 C120,196 240,196 360,210 C480,224 600,224 720,210"/>
+    <path d="M0,270 C120,256 240,256 360,270 C480,284 600,284 720,270"/>
+    <path d="M0,330 C120,316 240,316 360,330 C480,344 600,344 720,330"/>
+    <path d="M0,390 C120,376 240,376 360,390 C480,404 600,404 720,390"/>
+    <path d="M0,450 C120,436 240,436 360,450 C480,464 600,464 720,450"/>
+  </g>
+  <!-- A subtle "hilltop" of nested closed contours for variation. -->
+  <g fill="none" stroke="#b5824f" stroke-width="1.1" stroke-opacity="0.20">
+    <ellipse cx="520" cy="205" rx="22" ry="15"/>
+    <ellipse cx="520" cy="205" rx="44" ry="30"/>
+    <ellipse cx="520" cy="205" rx="68" ry="47"/>
+  </g>
+</svg>
