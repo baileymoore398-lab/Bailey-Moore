@@ -9,3 +9,7 @@
 // NEXT_PUBLIC_DONATE_URL in your Vercel environment variables.
 export const DONATE_URL =
   process.env.NEXT_PUBLIC_DONATE_URL || "https://ko-fi.com/routeforge";
+
+// Address the Contact form sends to (and shown as a direct mailto fallback).
+export const CONTACT_EMAIL =
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "route.forge.official@gmail.com";

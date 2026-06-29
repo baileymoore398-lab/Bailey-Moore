@@ -15,6 +15,12 @@ export function SiteFooter() {
           </span>
         </Link>
         <div className="flex flex-col items-center gap-3 sm:flex-row">
+          <Link
+            href="/contact"
+            className="text-xs font-medium text-muted transition-colors hover:text-white"
+          >
+            Contact
+          </Link>
           <a
             href={DONATE_URL}
             target="_blank"
