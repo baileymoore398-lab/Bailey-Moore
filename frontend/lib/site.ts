@@ -8,4 +8,4 @@
 // You can override it at build time without editing code by setting
 // NEXT_PUBLIC_DONATE_URL in your Vercel environment variables.
 export const DONATE_URL =
-  process.env.NEXT_PUBLIC_DONATE_URL || "https://www.buymeacoffee.com/baileymoore";
+  process.env.NEXT_PUBLIC_DONATE_URL || "https://ko-fi.com/routeforge";
