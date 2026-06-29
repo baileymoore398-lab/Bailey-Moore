@@ -59,10 +59,14 @@ export interface Scores {
 
 export interface CoachReport {
   summary: string;
+  overview?: string;
   strengths: string[];
   weaknesses: string[];
   mistakes: string[];
   advice: string[];
+  training?: string[];
+  focus_areas?: string[];
+  generated_by?: string;
 }
 
 export interface Analysis {

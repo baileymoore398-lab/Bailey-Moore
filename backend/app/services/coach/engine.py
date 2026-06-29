@@ -138,12 +138,65 @@ def _rule_based_report(
     else:
         summary += "Execution was clean with little time lost to errors."
 
+    # Longer multi-part overview: one line per performance dimension.
+    overview_lines = [summary, ""]
+    dim_comment = {
+        "navigation": "Navigation ({v:.0f}/100): how cleanly you stayed in contact with the map.",
+        "fitness": "Fitness ({v:.0f}/100): your sustainable running speed for the terrain.",
+        "execution": "Execution ({v:.0f}/100): how little time you lost to stops and hesitations.",
+        "route_choice": "Route choice ({v:.0f}/100): how efficient your chosen lines were.",
+    }
+    for dim in ("navigation", "route_choice", "execution", "fitness"):
+        v = scores.get(dim)
+        if v is not None:
+            verdict = "strong" if v >= 80 else "solid" if v >= 70 else "a clear area to work on"
+            overview_lines.append(
+                dim_comment[dim].format(v=v) + f" This was {verdict}."
+            )
+    overview = "\n".join(overview_lines)
+
+    # Concrete training plan from the two weakest areas.
+    training_map = {
+        "navigation": [
+            "Relocation drills: cover the map for 60s while running, then re-find your exact position.",
+            "Contour-only runs (hide everything but contours) to force terrain reading.",
+            "Map-memory sprints: memorise one leg, then run it with the map folded away.",
+        ],
+        "fitness": [
+            "2× per week aerobic-threshold runs, 20–30 min at comfortably-hard effort.",
+            "Weekly hill reps for terrain-specific leg strength.",
+            "One long, easy run each week to build endurance base.",
+        ],
+        "execution": [
+            "Pressure intervals: short technical courses at near race pace.",
+            "Control-flow drills: always plan the next leg before reaching the control.",
+            "Race-pace runs with a heart-rate cap to stop you over-running into mistakes.",
+        ],
+        "route_choice": [
+            "Armchair route choice: study old maps, pick a line, then compare to the optimal.",
+            "Run the same leg by two different routes and time both.",
+            "Practise spotting the straightest runnable line under time pressure.",
+        ],
+    }
+    focus_areas = [d for d in ranked[::-1] if scores.get(d, 100) < 78][:2]
+    training: List[str] = []
+    for area in (focus_areas or [ranked[-1]]):
+        training.extend(training_map.get(area, [])[:2])
+    if not training:
+        training = [
+            "Maintain your current training volume and add weekly technical sessions.",
+            "Add short pressure-training races to keep execution sharp at speed.",
+        ]
+
     return {
         "summary": summary,
+        "overview": overview,
         "strengths": strengths,
         "weaknesses": weaknesses or ["No major weaknesses detected in this race."],
         "mistakes": mistakes or ["No significant mistakes detected."],
         "advice": advice,
+        "training": training,
+        "focus_areas": [label.get(a, a) for a in focus_areas],
         "generated_by": "rule_based",
     }
 
@@ -157,10 +210,14 @@ def _openai_report(payload: dict) -> dict | None:
         client = OpenAI(api_key=settings.OPENAI_API_KEY)
         system = (
             "You are an elite orienteering and endurance coach. Given structured "
-            "race analysis JSON, write a concise, specific, encouraging coaching "
-            "report. Respond ONLY with JSON matching: {summary, strengths[], "
-            "weaknesses[], mistakes[], advice[]}. Reference concrete legs, times "
-            "and distances from the data."
+            "race analysis JSON, write a detailed, specific, encouraging coaching "
+            "report. Respond ONLY with JSON matching: {summary, overview, "
+            "strengths[], weaknesses[], mistakes[], advice[], training[], "
+            "focus_areas[]}. 'summary' is 2-3 sentences. 'overview' is a fuller "
+            "3-5 sentence narrative covering navigation, fitness, execution and "
+            "route choice. 'training' is 3-5 concrete drills/sessions to improve "
+            "the weakest areas. 'focus_areas' names the 1-2 priorities. Reference "
+            "concrete legs, times and distances from the data throughout."
         )
         resp = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
@@ -173,9 +230,13 @@ def _openai_report(payload: dict) -> dict | None:
         )
         data = json.loads(resp.choices[0].message.content)
         data["generated_by"] = settings.OPENAI_MODEL
-        # Ensure required keys exist.
-        for key in ("summary", "strengths", "weaknesses", "mistakes", "advice"):
-            data.setdefault(key, [] if key != "summary" else "")
+        # Ensure all keys exist (summary/overview are strings, rest are lists).
+        for key in ("summary", "overview"):
+            data.setdefault(key, "")
+        if not data.get("overview"):
+            data["overview"] = data.get("summary", "")
+        for key in ("strengths", "weaknesses", "mistakes", "advice", "training", "focus_areas"):
+            data.setdefault(key, [])
         return data
     except Exception as exc:  # pragma: no cover - network/credentials dependent
         logger.warning("OpenAI coaching failed, falling back to rule-based: %s", exc)
