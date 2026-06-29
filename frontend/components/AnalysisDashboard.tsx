@@ -48,6 +48,17 @@ export function AnalysisDashboard({
 }) {
   const [cursor, setCursor] = React.useState(0);
   const [highlightLeg, setHighlightLeg] = React.useState<number | null>(null);
+  const [showAllMistakes, setShowAllMistakes] = React.useState(false);
+
+  // Biggest time-loss first; collapse the list when there are many.
+  const MISTAKE_PREVIEW = 3;
+  const sortedMistakes = React.useMemo(
+    () => [...analysis.mistakes].sort((a, b) => (b.lost_s ?? 0) - (a.lost_s ?? 0)),
+    [analysis.mistakes]
+  );
+  const visibleMistakes = showAllMistakes
+    ? sortedMistakes
+    : sortedMistakes.slice(0, MISTAKE_PREVIEW);
 
   const m = analysis.metrics;
   const hasControls = analysis.controls.length > 0;
@@ -296,7 +307,14 @@ export function AnalysisDashboard({
         {/* Key mistakes */}
         <Card>
           <CardHeader>
-            <CardTitle>Key mistakes</CardTitle>
+            <CardTitle>
+              Key mistakes
+              {analysis.mistakes.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-muted">
+                  ({analysis.mistakes.length})
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {analysis.mistakes.length === 0 ? (
@@ -304,27 +322,39 @@ export function AnalysisDashboard({
                 No significant mistakes detected — clean run!
               </p>
             ) : (
-              analysis.mistakes.map((mk, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-border bg-bg-soft/60 p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold capitalize">
-                      {mk.type.replace(/_/g, " ")}
-                    </span>
-                    <Badge variant={severityVariant[mk.severity]}>
-                      −{mk.lost_s}s
-                    </Badge>
+              <>
+                {visibleMistakes.map((mk, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-border bg-bg-soft/60 p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold capitalize">
+                        {mk.type.replace(/_/g, " ")}
+                      </span>
+                      <Badge variant={severityVariant[mk.severity]}>
+                        −{mk.lost_s}s
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">
+                      {mk.leg != null && (
+                        <span className="text-accent">Leg {mk.leg}: </span>
+                      )}
+                      {mk.description}
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted">
-                    {mk.leg != null && (
-                      <span className="text-accent">Leg {mk.leg}: </span>
-                    )}
-                    {mk.description}
-                  </p>
-                </div>
-              ))
+                ))}
+                {analysis.mistakes.length > MISTAKE_PREVIEW && (
+                  <button
+                    onClick={() => setShowAllMistakes((v) => !v)}
+                    className="w-full rounded-lg border border-border bg-bg-soft/40 py-2 text-xs font-semibold text-accent transition hover:bg-bg-soft"
+                  >
+                    {showAllMistakes
+                      ? "Show fewer"
+                      : `Show all ${analysis.mistakes.length} mistakes ▾`}
+                  </button>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
