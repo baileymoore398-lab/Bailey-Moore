@@ -16,7 +16,7 @@
        contour-brown glows. Contours tile; gradients are fixed. */
     background-image:
       url("/contours.svg"),
-      radial-gradient(60% 60% at 50% 0%, rgba(230, 0, 126, 0.07), transparent 70%),
+      radial-gradient(60% 60% at 50% 0%, rgba(46, 207, 110, 0.08), transparent 70%),
       radial-gradient(45% 45% at 100% 100%, rgba(198, 105, 47, 0.07), transparent 70%);
     background-repeat: repeat, no-repeat, no-repeat;
     background-size: 720px 480px, auto, auto;
@@ -54,16 +54,16 @@
   height: 16px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 3px solid #e6007e;
+  border: 3px solid #2ecf6e;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(230, 0, 126, 0.6);
+  box-shadow: 0 0 10px rgba(46, 207, 110, 0.6);
 }
 .rf-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 3px solid #e6007e;
+  border: 3px solid #2ecf6e;
   cursor: pointer;
 }
 

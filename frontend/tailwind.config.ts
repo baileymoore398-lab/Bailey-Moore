@@ -21,9 +21,9 @@ const config: Config = {
         },
         border: "#2c3322",
         accent: {
-          DEFAULT: "#e6007e",
+          DEFAULT: "#2ecf6e",
           hot: "#c6692f",
-          lime: "#5aa84a",
+          lime: "#86d94f",
         },
         muted: "#9aa089",
       },

@@ -10,7 +10,7 @@ const variants: Record<Variant, string> = {
   default:
     "bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-border",
   accent:
-    "bg-accent text-bg font-semibold hover:bg-accent/90 shadow-[0_0_24px_-6px_rgba(230,0,126,0.6)]",
+    "bg-accent text-bg font-semibold hover:bg-accent/90 shadow-[0_0_24px_-6px_rgba(46,207,110,0.6)]",
   outline:
     "border border-border bg-transparent text-white hover:bg-bg-elevated/60",
   ghost: "bg-transparent text-muted hover:text-white hover:bg-bg-elevated/60",
