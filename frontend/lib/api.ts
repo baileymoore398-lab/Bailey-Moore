@@ -90,7 +90,17 @@ export async function request<T>(
     let detail = res.statusText;
     try {
       const data = await res.json();
-      detail = (data && (data.detail || data.message)) || detail;
+      const d = data?.detail ?? data?.message;
+      if (Array.isArray(d)) {
+        // FastAPI validation errors: [{loc, msg, ...}] -> readable message.
+        detail = d
+          .map((e) => e?.msg || JSON.stringify(e))
+          .join("; ");
+      } else if (typeof d === "string") {
+        detail = d;
+      } else if (d) {
+        detail = JSON.stringify(d);
+      }
     } catch {
       /* ignore parse errors */
     }
