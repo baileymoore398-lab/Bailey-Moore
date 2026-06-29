@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { clearSession, getSessionUser, type SessionUser } from "@/lib/auth";
+import { DONATE_URL } from "@/lib/site";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -69,6 +70,15 @@ export function SiteNav() {
               </Link>
             );
           })}
+          <a
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Support RouteForge"
+            className="mr-1 hidden items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent sm:inline-flex"
+          >
+            <span aria-hidden>❤</span> Support
+          </a>
           {user ? (
             <>
               <Link
