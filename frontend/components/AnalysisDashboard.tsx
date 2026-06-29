@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScoresRadar } from "@/components/ScoresRadar";
 import { ReplayControls } from "@/components/ReplayControls";
 import { DemoNotice } from "@/components/DemoNotice";
-import { downloadReport } from "@/lib/report";
+import { downloadReport, downloadReportPdf } from "@/lib/report";
 import {
   cn,
   formatDistance,
@@ -377,12 +377,23 @@ export function AnalysisDashboard({
                 : "Personalised analysis of your race"}
             </p>
           </div>
-          <button
-            onClick={() => downloadReport(analysis, "Race analysis")}
-            className="shrink-0 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/20"
-          >
-            ⬇ Download report
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => {
+                void downloadReportPdf(analysis, "Race analysis").catch(() => {});
+              }}
+              className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/20"
+            >
+              ⬇ Download PDF
+            </button>
+            <button
+              onClick={() => downloadReport(analysis, "Race analysis")}
+              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted transition hover:text-white"
+              title="Download as Markdown"
+            >
+              .md
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="whitespace-pre-line text-base leading-relaxed text-white/90">
