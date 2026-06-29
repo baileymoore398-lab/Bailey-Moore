@@ -36,15 +36,18 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
+// Speed colour ramp: slow (blue) -> mid (green) -> fast (lime/yellow).
+// Tuned to match the orienteering green theme.
+const SPEED_STOPS: [number, [number, number, number]][] = [
+  [0, [59, 130, 246]], // blue  — slowest
+  [0.5, [46, 207, 110]], // green — theme accent
+  [1, [217, 245, 107]], // lime  — fastest
+];
+
 /** Map a speed (km/h) to a colour from slow (blue) to fast (lime). */
 function speedColor(speed: number, max: number): string {
   const t = Math.max(0, Math.min(1, max > 0 ? speed / max : 0));
-  // blue -> cyan -> lime
-  const stops: [number, [number, number, number]][] = [
-    [0, [56, 102, 224]],
-    [0.5, [34, 211, 238]],
-    [1, [163, 230, 53]],
-  ];
+  const stops = SPEED_STOPS;
   let lo = stops[0];
   let hi = stops[stops.length - 1];
   for (let i = 0; i < stops.length - 1; i++) {
@@ -238,7 +241,7 @@ export function ReplayMap({
     if (!markerRef.current) {
       const el = document.createElement("div");
       el.className =
-        "h-4 w-4 rounded-full bg-accent ring-4 ring-accent/30 shadow-[0_0_16px_rgba(34,211,238,0.9)]";
+        "h-4 w-4 rounded-full bg-accent ring-4 ring-accent/30 shadow-[0_0_16px_rgba(46,207,110,0.9)]";
       markerRef.current = new maplibregl.Marker({ element: el })
         .setLngLat([pt.lon, pt.lat])
         .addTo(map);
@@ -260,10 +263,55 @@ export function ReplayMap({
 
   return (
     <div
-      ref={containerRef}
-      className="h-full w-full overflow-hidden rounded-xl"
+      className="relative h-full w-full overflow-hidden rounded-xl"
       style={{ minHeight: 380 }}
-    />
+    >
+      <div ref={containerRef} className="h-full w-full" />
+      <MapLegend maxSpeed={maxSpeed} />
+    </div>
+  );
+}
+
+/** Small map key: speed colour scale + marker symbols. */
+function MapLegend({ maxSpeed }: { maxSpeed: number }) {
+  const gradient = `linear-gradient(to right, ${SPEED_STOPS.map(
+    ([t, [r, g, b]]) => `rgb(${r},${g},${b}) ${Math.round(t * 100)}%`
+  ).join(", ")})`;
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-3 z-10 w-40 rounded-lg border border-border/70 bg-bg/85 p-2.5 text-[10px] leading-tight text-muted shadow-lg backdrop-blur">
+      <div className="mb-1 font-semibold uppercase tracking-wide text-white/90">
+        Map key
+      </div>
+      <div className="mb-1 text-[9px]">Speed</div>
+      <div
+        className="h-2 w-full rounded-full"
+        style={{ background: gradient }}
+      />
+      <div className="mt-0.5 flex justify-between font-mono tabular-nums">
+        <span>0</span>
+        <span>{Math.round(maxSpeed)} km/h</span>
+      </div>
+      <div className="mt-2 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-0 w-0 border-x-[5px] border-b-[9px] border-x-transparent border-b-emerald-400" />
+          <span>Start</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="grid h-3.5 w-3.5 place-items-center rounded-sm bg-white text-[7px] font-black text-bg">
+            ▣
+          </span>
+          <span>Finish</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#f97316] bg-bg/40" />
+          <span>Control</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-accent ring-2 ring-accent/30" />
+          <span>You (live)</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
