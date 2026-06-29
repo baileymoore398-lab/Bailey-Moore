@@ -28,21 +28,36 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  /**
+   * Render the button's styling onto the single child element instead of a
+   * <button>. Use this to make a <Link> look like a button without nesting a
+   * <button> inside an <a> (invalid HTML that breaks navigation/hydration):
+   *   <Button asChild><Link href="/">Home</Link></Button>
+   */
+  asChild?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "md", ...props }, ref) => {
+  ({ className, variant = "default", size = "md", asChild = false, ...props }, ref) => {
+    const classes = cn(
+      "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:pointer-events-none disabled:opacity-50",
+      variants[variant],
+      sizes[size],
+      className
+    );
+
+    if (asChild && React.isValidElement(props.children)) {
+      const child = props.children as React.ReactElement<{
+        className?: string;
+      }>;
+      return React.cloneElement(child, {
+        ref,
+        className: cn(classes, child.props.className),
+      } as never);
+    }
+
     return (
-      <button
-        ref={ref}
-        className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:pointer-events-none disabled:opacity-50",
-          variants[variant],
-          sizes[size],
-          className
-        )}
-        {...props}
-      />
+      <button ref={ref} className={classes} {...props} />
     );
   }
 );

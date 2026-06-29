@@ -63,11 +63,9 @@ export default function LandingPage() {
             AI coach that tells you exactly how to improve.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3">
-            <Link href="/upload">
-              <Button variant="accent" size="lg">
-                Analyze a race →
-              </Button>
-            </Link>
+            <Button variant="accent" size="lg" asChild>
+              <Link href="/upload">Analyze a race →</Link>
+            </Button>
             <Link
               href="/races/rc_demo_001"
               className="inline-flex items-center justify-center rounded-lg border border-border px-6 py-3 text-base font-semibold text-white transition hover:border-accent hover:text-accent"
@@ -141,11 +139,9 @@ export default function LandingPage() {
             required for the demo.
           </p>
           <div className="relative mt-8">
-            <Link href="/upload">
-              <Button variant="accent" size="lg">
-                Start analyzing
-              </Button>
-            </Link>
+            <Button variant="accent" size="lg" asChild>
+              <Link href="/upload">Start analyzing</Link>
+            </Button>
           </div>
         </motion.div>
       </section>

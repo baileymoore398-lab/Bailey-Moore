@@ -161,11 +161,9 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-emerald-300">
                 {message || "Your password has been reset."}
               </p>
-              <Link href="/login">
-                <Button variant="accent" className="w-full">
-                  Back to sign in
-                </Button>
-              </Link>
+              <Button variant="accent" className="w-full" asChild>
+                <Link href="/login">Back to sign in</Link>
+              </Button>
             </div>
           )}
 

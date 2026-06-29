@@ -19,9 +19,9 @@ export default async function RacesPage() {
             {races.length} race{races.length === 1 ? "" : "s"} analyzed.
           </p>
         </div>
-        <Link href="/upload">
-          <Button variant="accent">New analysis</Button>
-        </Link>
+        <Button variant="accent" asChild>
+          <Link href="/upload">New analysis</Link>
+        </Button>
       </div>
 
       {demo && (
@@ -73,9 +73,9 @@ export default async function RacesPage() {
       {races.length === 0 && (
         <Card className="mt-8 p-12 text-center">
           <p className="text-muted">No races yet.</p>
-          <Link href="/upload" className="mt-4 inline-block">
-            <Button variant="accent">Analyze your first race</Button>
-          </Link>
+          <Button variant="accent" className="mt-4" asChild>
+            <Link href="/upload">Analyze your first race</Link>
+          </Button>
         </Card>
       )}
     </div>

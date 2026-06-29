@@ -124,15 +124,15 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/upload">
-          <Button variant="accent">New analysis</Button>
-        </Link>
-        <Link href="/training">
-          <Button variant="outline">Upload training</Button>
-        </Link>
-        <Link href="/events">
-          <Button variant="outline">View events</Button>
-        </Link>
+        <Button variant="accent" asChild>
+          <Link href="/upload">New analysis</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/training">Upload training</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/events">View events</Link>
+        </Button>
       </div>
 
       {/* Stat cards */}
