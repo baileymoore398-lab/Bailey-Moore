@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.8",
     "jspdf": "^2.5.2",

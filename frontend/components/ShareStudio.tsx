@@ -286,12 +286,50 @@ function drawScene(ctx: CanvasRenderingContext2D, o: SceneOpts) {
 
 function pickMime(): string | null {
   if (typeof MediaRecorder === "undefined") return null;
+  // Prefer MP4 (Chrome 121+, Edge, Safari record it natively); fall back to
+  // WebM, which we then transcode to MP4 with ffmpeg.wasm.
   const types = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4;codecs=avc1",
+    "video/mp4",
     "video/webm;codecs=vp9",
     "video/webm;codecs=vp8",
     "video/webm",
   ];
   return types.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
+}
+
+// Lazy-loaded WebM→MP4 transcode (only for browsers that can't record MP4).
+// Core is fetched on demand from a CDN, so it never bloats the initial bundle.
+async function transcodeToMp4(
+  webm: Blob,
+  onProgress: (pct: number) => void
+): Promise<Blob> {
+  const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+  const { fetchFile, toBlobURL } = await import("@ffmpeg/util");
+  const ffmpeg = new FFmpeg();
+  const base = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm";
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+  });
+  ffmpeg.on("progress", ({ progress }) =>
+    onProgress(Math.max(0, Math.min(100, Math.round(progress * 100))))
+  );
+  await ffmpeg.writeFile("in.webm", await fetchFile(webm));
+  await ffmpeg.exec([
+    "-i",
+    "in.webm",
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-movflags",
+    "+faststart",
+    "out.mp4",
+  ]);
+  const data = (await ffmpeg.readFile("out.mp4")) as Uint8Array;
+  return new Blob([data as unknown as BlobPart], { type: "video/mp4" });
 }
 
 export function ShareStudio({
@@ -306,7 +344,34 @@ export function ShareStudio({
   const [title, setTitle] = React.useState(defaultTitle);
   const [recording, setRecording] = React.useState(false);
   const [recPct, setRecPct] = React.useState(0);
+  const [converting, setConverting] = React.useState(false);
+  const [convPct, setConvPct] = React.useState(0);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  const busy = recording || converting;
+
+  // Quick-fill caption presets, built from this race's data.
+  const presets = React.useMemo(() => {
+    const out = ["Race recap"];
+    if (analysis.created_at) {
+      const d = new Date(analysis.created_at);
+      if (!isNaN(d.getTime()))
+        out.push(
+          d.toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        );
+    }
+    out.push(
+      `${formatDistance(analysis.metrics.distance_m)} · ${formatDuration(
+        analysis.metrics.duration_s
+      )}`
+    );
+    out.push(`Overall ${analysis.scores.overall}/100`);
+    return Array.from(new Set(out));
+  }, [analysis]);
 
   const videoMime = React.useMemo(() => (open ? pickMime() : null), [open]);
 
@@ -353,7 +418,7 @@ export function ShareStudio({
 
   function recordVideo() {
     const c = canvasRef.current;
-    if (!c || !videoMime || recording) return;
+    if (!c || !videoMime || busy) return;
     setRecording(true);
     setRecPct(0);
     const stream = c.captureStream(30);
@@ -363,11 +428,28 @@ export function ShareStudio({
       videoBitsPerSecond: 8_000_000,
     });
     mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    mr.onstop = () => {
-      download(new Blob(chunks, { type: videoMime }), "webm");
+    mr.onstop = async () => {
+      const blob = new Blob(chunks, { type: videoMime });
       setRecording(false);
       setRecPct(0);
       redraw(1);
+      if (videoMime.includes("mp4")) {
+        // Recorded natively as MP4 — no conversion needed.
+        download(blob, "mp4");
+        return;
+      }
+      // WebM → transcode to MP4; fall back to WebM if that fails.
+      setConverting(true);
+      setConvPct(0);
+      try {
+        const mp4 = await transcodeToMp4(blob, setConvPct);
+        download(mp4, "mp4");
+      } catch {
+        download(blob, "webm");
+      } finally {
+        setConverting(false);
+        setConvPct(0);
+      }
     };
     mr.start();
     const start = performance.now();
@@ -394,7 +476,7 @@ export function ShareStudio({
       {open && (
         <div
           className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
-          onClick={() => !recording && setOpen(false)}
+          onClick={() => !busy && setOpen(false)}
         >
           <div
             className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-bg-card p-5 shadow-2xl sm:p-6"
@@ -410,7 +492,7 @@ export function ShareStudio({
                 </p>
               </div>
               <button
-                onClick={() => !recording && setOpen(false)}
+                onClick={() => !busy && setOpen(false)}
                 className="rounded-lg px-2 py-1 text-muted transition hover:text-white"
                 aria-label="Close"
               >
@@ -441,6 +523,23 @@ export function ShareStudio({
                     placeholder="Race recap"
                     className="w-full rounded-lg border border-border bg-bg-soft px-3 py-2 text-sm outline-none focus:border-accent"
                   />
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {presets.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setTitle(p)}
+                        className={
+                          "rounded-full border px-2.5 py-1 text-[11px] font-medium transition " +
+                          (title === p
+                            ? "border-accent bg-accent/10 text-accent"
+                            : "border-border text-muted hover:text-white")
+                        }
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -452,7 +551,7 @@ export function ShareStudio({
                       <button
                         key={r}
                         onClick={() => setRatio(r)}
-                        disabled={recording}
+                        disabled={busy}
                         className={
                           "rounded-lg border px-3 py-2 text-left text-sm font-medium transition " +
                           (ratio === r
@@ -470,7 +569,7 @@ export function ShareStudio({
                   <Button
                     variant="accent"
                     className="w-full"
-                    disabled={recording}
+                    disabled={busy}
                     onClick={() => downloadPhoto("image/png")}
                   >
                     ⬇ Download photo (PNG)
@@ -478,7 +577,7 @@ export function ShareStudio({
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={recording}
+                    disabled={busy}
                     onClick={() => downloadPhoto("image/jpeg")}
                   >
                     Download photo (JPG)
@@ -487,12 +586,14 @@ export function ShareStudio({
                     <Button
                       variant="default"
                       className="w-full"
-                      disabled={recording}
+                      disabled={busy}
                       onClick={recordVideo}
                     >
                       {recording
                         ? `Recording… ${recPct}%`
-                        : "🎬 Record replay video"}
+                        : converting
+                          ? `Converting to MP4… ${convPct}%`
+                          : "🎬 Record replay video (MP4)"}
                     </Button>
                   ) : (
                     <p className="text-center text-xs text-muted">
@@ -502,8 +603,9 @@ export function ShareStudio({
                   )}
                   {videoMime && (
                     <p className="text-center text-[11px] leading-relaxed text-muted">
-                      Video saves as .webm (great for X/Discord). For
-                      Instagram/TikTok, convert to MP4 or upload the photo.
+                      Saves as MP4. On browsers that record WebM, it&apos;s
+                      converted to MP4 automatically (first conversion downloads
+                      a small encoder).
                     </p>
                   )}
                 </div>
