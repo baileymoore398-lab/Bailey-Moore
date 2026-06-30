@@ -18,6 +18,16 @@ export default function ForgotPasswordPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
+  // When arriving from the reset email link (/forgot-password?token=…),
+  // prefill the token and jump straight to choosing a new password.
+  React.useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("token");
+    if (t) {
+      setToken(t);
+      setStep(2);
+    }
+  }, []);
+
   async function handleRequest(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);

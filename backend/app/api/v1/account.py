@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core.deps import get_current_user, get_or_create_athlete
+from app.core.email import send_password_reset_email
 from app.core.security import (
     create_reset_token,
     decode_reset_token,
@@ -77,24 +78,31 @@ def update_profile(
 
 
 @router.post("/password-reset/request")
-def request_password_reset(body: PasswordResetRequest, db: Session = Depends(get_db)):
-    """Issue a password-reset token.
+def request_password_reset(
+    body: PasswordResetRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Issue a password-reset token and email it to the user.
 
-    In production this token is emailed to the user. Without an email provider
-    configured (dev), the token is returned directly so the flow is testable
-    end-to-end. The response is identical whether or not the email exists, to
-    avoid account enumeration.
+    The token is emailed when an SMTP transport is configured. Without one (dev),
+    the token is returned directly so the flow stays testable end-to-end. The
+    response is identical whether or not the email exists, to avoid account
+    enumeration.
     """
     user = db.query(User).filter(User.email == body.email).one_or_none()
     resp = {"message": "If that email exists, a reset link has been sent."}
     if user is None:
         return resp
     token = create_reset_token(user.id)
-    # TODO(email): integrate transactional email provider; for now expose in dev.
-    if settings.ENV != "production":
+    if settings.email_enabled:
+        # Send after the response; the email layer swallows its own errors.
+        background.add_task(send_password_reset_email, user.email, token)
+    elif settings.ENV != "production":
+        # No email transport configured — expose the token for local testing.
         resp["reset_token"] = token
     else:
-        logger.info("Password reset requested for user %s", user.id)
+        logger.info("Password reset requested for user %s (no email transport)", user.id)
     return resp
 
 

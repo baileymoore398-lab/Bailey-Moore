@@ -5,9 +5,10 @@ first-class native auth path and issues the JWTs the rest of the API consumes.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.email import send_welcome_email
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.models import Athlete, Plan, Subscription, User
@@ -17,7 +18,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
+def register(
+    body: RegisterRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     existing = db.query(User).filter(User.email == body.email).one_or_none()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
@@ -36,6 +41,9 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     )
     db.add(Subscription(user_id=user.id, plan=Plan.free.value))
     db.commit()
+    # Fire the welcome email after the response is sent; failures are swallowed
+    # inside the email layer so they never affect signup.
+    background.add_task(send_welcome_email, user.email, user.full_name)
     token = create_access_token(user.id, {"email": user.email, "role": user.role})
     return TokenResponse(access_token=token, user_id=user.id, email=user.email)
 

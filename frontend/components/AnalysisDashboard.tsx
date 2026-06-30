@@ -223,6 +223,17 @@ export function AnalysisDashboard({
               <CardTitle>Legs</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
+              {!hasSplits && (
+                <div className="mx-5 mb-4 flex items-start gap-2.5 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-xs leading-relaxed text-accent">
+                  <span aria-hidden>🎯</span>
+                  <span>
+                    <strong>This analysis is more accurate with splits.</strong>{" "}
+                    Upload your split times when you analyze a race and RouteForge
+                    pins each control to the exact punch time — unlocking leg
+                    rankings, % behind, and sharper mistake detection.
+                  </span>
+                </div>
+              )}
               {hasLegs ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">

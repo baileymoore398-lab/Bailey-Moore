@@ -168,6 +168,17 @@ export default function UploadPage() {
                 error={slots[steps[current].kind].error}
                 onFile={(f) => onFile(steps[current].kind, f)}
               />
+              {steps[current].kind === "splits" && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">
+                  <span aria-hidden>🎯</span>
+                  <span>
+                    <strong>More accurate with splits.</strong> Adding your split
+                    times pins each control to the exact moment you punched it —
+                    so control placement, leg-by-leg timing and mistake detection
+                    are far more precise. Optional, but worth it if you have them.
+                  </span>
+                </div>
+              )}
               <div className="mt-6 flex justify-between">
                 <Button
                   variant="ghost"

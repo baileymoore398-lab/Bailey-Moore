@@ -80,6 +80,47 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None
 
+    # --- Email (transactional, SMTP) ---
+    # Leave SMTP_HOST blank to disable real sending: emails are logged instead
+    # and (outside production) the reset token is returned in the API response so
+    # the flow stays testable. For Gmail use host=smtp.gmail.com, port=587,
+    # user=<your address>, password=<a Google app password>, from=<your address>.
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_STARTTLS: bool = True
+    EMAIL_FROM: str | None = None
+    EMAIL_FROM_NAME: str = "RouteForge"
+    # Public URL of the frontend, used to build links in emails (e.g. reset).
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    @field_validator(
+        "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM", mode="before"
+    )
+    @classmethod
+    def _blank_to_none(cls, v):
+        # Treat blank/whitespace env values as unset.
+        if v is None or not str(v).strip():
+            return None
+        return str(v).strip()
+
+    @field_validator("FRONTEND_URL", mode="before")
+    @classmethod
+    def _normalize_frontend_url(cls, v):
+        if v is None or not str(v).strip():
+            return "http://localhost:3000"
+        return str(v).strip().rstrip("/")
+
+    @property
+    def email_enabled(self) -> bool:
+        """True when an SMTP transport is configured for real sending."""
+        return bool(self.SMTP_HOST and (self.EMAIL_FROM or self.SMTP_USER))
+
+    @property
+    def email_from_addr(self) -> str:
+        return self.EMAIL_FROM or self.SMTP_USER or "no-reply@routeforge.app"
+
     @property
     def cors_origins(self) -> List[str]:
         """Parsed CORS allow-list. Accepts comma-separated or a JSON array."""
