@@ -6,7 +6,7 @@ import { createClub, listClubs } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DemoBadge } from "@/components/DemoBadge";
+import { DemoNotice } from "@/components/DemoNotice";
 
 interface ClubListItem {
   id: string;
@@ -18,6 +18,9 @@ interface ClubListItem {
 export default function ClubsPage() {
   const [clubs, setClubs] = React.useState<ClubListItem[]>([]);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [loading, setLoading] = React.useState(true);
   const [name, setName] = React.useState("");
   const [country, setCountry] = React.useState("");
@@ -26,9 +29,10 @@ export default function ClubsPage() {
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const { data, demo } = await listClubs();
+    const { data, demo, reason } = await listClubs();
     setClubs(data);
     setDemo(demo);
+    setDemoReason(reason);
     setLoading(false);
   }, []);
 
@@ -55,6 +59,7 @@ export default function ClubsPage() {
 
   return (
     <div className="container-page space-y-8 py-8">
+      {demo && <DemoNotice context="clubs data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Clubs</h1>
@@ -62,7 +67,6 @@ export default function ClubsPage() {
             Club analytics, member rankings, and event participation.
           </p>
         </div>
-        <DemoBadge show={demo} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">

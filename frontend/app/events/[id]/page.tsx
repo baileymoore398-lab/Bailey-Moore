@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DemoBadge } from "@/components/DemoBadge";
+import { DemoNotice } from "@/components/DemoNotice";
 import { Leaderboard } from "@/components/Leaderboard";
 import { LegRankings } from "@/components/LegRankings";
 import { formatDistance, formatDuration, formatTimeLoss } from "@/lib/utils";
@@ -45,6 +45,9 @@ export default function EventDetailPage({
   const [event, setEvent] = React.useState<EventDetail | null>(null);
   const [analysis, setAnalysis] = React.useState<EventAnalysis | null>(null);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [course, setCourse] = React.useState<string | null>(null);
 
   const refetch = React.useCallback(async () => {
@@ -52,6 +55,7 @@ export default function EventDetailPage({
     setEvent(ev.data);
     setAnalysis(an.data);
     setDemo(ev.demo || an.demo);
+    setDemoReason(ev.reason || an.reason);
     const courses = Object.keys(an.data.leaderboards);
     setCourse((c) => c ?? courses[0] ?? null);
   }, [id]);
@@ -65,6 +69,7 @@ export default function EventDetailPage({
 
   return (
     <div className="container-page space-y-6 py-8">
+      {demo && <DemoNotice context="event data" reason={demoReason} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -81,7 +86,6 @@ export default function EventDetailPage({
             </p>
           )}
         </div>
-        <DemoBadge show={demo} />
       </div>
 
       {analysis && (

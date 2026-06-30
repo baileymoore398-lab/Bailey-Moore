@@ -5,7 +5,7 @@ import { addClubMember, getClubAnalytics } from "@/lib/api";
 import type { ClubAnalytics } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DemoBadge } from "@/components/DemoBadge";
+import { DemoNotice } from "@/components/DemoNotice";
 
 export default function ClubDetailPage({
   params,
@@ -15,15 +15,19 @@ export default function ClubDetailPage({
   const id = params.id;
   const [club, setClub] = React.useState<ClubAnalytics | null>(null);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [handle, setHandle] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [msg, setMsg] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
-    const { data, demo } = await getClubAnalytics(id);
+    const { data, demo, reason } = await getClubAnalytics(id);
     setClub(data);
     setDemo(demo);
+    setDemoReason(reason);
   }, [id]);
 
   React.useEffect(() => {
@@ -60,11 +64,11 @@ export default function ClubDetailPage({
 
   return (
     <div className="container-page space-y-6 py-8">
+      {demo && <DemoNotice context="club data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-white">
           {club?.name ?? "Club"}
         </h1>
-        <DemoBadge show={demo} />
       </div>
 
       {club && (

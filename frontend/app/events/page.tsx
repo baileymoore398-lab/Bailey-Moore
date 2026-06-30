@@ -8,13 +8,16 @@ import type { EventDetail } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DemoBadge } from "@/components/DemoBadge";
+import { DemoNotice } from "@/components/DemoNotice";
 import { formatDate } from "@/lib/utils";
 
 export default function EventsPage() {
   const router = useRouter();
   const [events, setEvents] = React.useState<EventDetail[]>([]);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [loading, setLoading] = React.useState(true);
   const [creating, setCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -26,9 +29,10 @@ export default function EventsPage() {
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const { data, demo } = await listEvents();
+    const { data, demo, reason } = await listEvents();
     setEvents(data);
     setDemo(demo);
+    setDemoReason(reason);
     setLoading(false);
   }, []);
 
@@ -57,6 +61,7 @@ export default function EventsPage() {
 
   return (
     <div className="container-page space-y-8 py-8">
+      {demo && <DemoNotice context="events data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Events</h1>
@@ -64,7 +69,6 @@ export default function EventsPage() {
             Host multi-competitor events with leaderboards and synchronized replay.
           </p>
         </div>
-        <DemoBadge show={demo} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">

@@ -12,7 +12,7 @@ import type { CoachAthlete, CoachTrends } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DemoBadge } from "@/components/DemoBadge";
+import { DemoNotice } from "@/components/DemoNotice";
 import { CoachTrendCharts } from "@/components/CoachTrendCharts";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,9 @@ function asNotes(res: unknown): CoachNote[] {
 export default function CoachPage() {
   const [athletes, setAthletes] = React.useState<CoachAthlete[]>([]);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [selected, setSelected] = React.useState<string | null>(null);
   const [trends, setTrends] = React.useState<CoachTrends | null>(null);
   const [notes, setNotes] = React.useState<CoachNote[]>([]);
@@ -40,9 +43,10 @@ export default function CoachPage() {
   const [busy, setBusy] = React.useState(false);
 
   const loadAthletes = React.useCallback(async () => {
-    const { data, demo } = await listCoachAthletes();
+    const { data, demo, reason } = await listCoachAthletes();
     setAthletes(data);
     setDemo(demo);
+    setDemoReason(reason);
     setSelected((s) => s ?? data[0]?.athlete_id ?? null);
   }, []);
 
@@ -99,6 +103,7 @@ export default function CoachPage() {
 
   return (
     <div className="container-page space-y-6 py-8">
+      {demo && <DemoNotice context="coach data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
@@ -108,7 +113,6 @@ export default function CoachPage() {
             Track athlete progress and leave coaching notes.
           </p>
         </div>
-        <DemoBadge show={demo} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { DemoNotice } from "@/components/DemoNotice";
 import { UploadZone, type UploadState } from "@/components/UploadZone";
 import { VolumeBars, SpeedHrChart } from "@/components/VolumeCharts";
 import { LoadIndicator } from "@/components/LoadIndicator";
@@ -27,6 +27,9 @@ export default function TrainingPage() {
   );
   const [goals, setGoals] = React.useState<Record<string, unknown>[]>([]);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [loading, setLoading] = React.useState(true);
   const [file, setFile] = React.useState<File | null>(null);
   const [uploadState, setUploadState] = React.useState<UploadState>("idle");
@@ -37,6 +40,7 @@ export default function TrainingPage() {
     setAnalytics(a.data);
     setGoals(g.data as Record<string, unknown>[]);
     setDemo(a.demo);
+    setDemoReason(a.reason);
     setLoading(false);
   }, []);
 
@@ -73,6 +77,7 @@ export default function TrainingPage() {
 
   return (
     <div className="container-page py-10">
+      {demo && <DemoNotice context="training data" reason={demoReason} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black tracking-tight">Training Centre</h1>
@@ -80,7 +85,6 @@ export default function TrainingPage() {
             {analytics.session_count} sessions logged
           </p>
         </div>
-        {demo && <Badge variant="warning">Demo data</Badge>}
       </div>
 
       {/* Upload */}

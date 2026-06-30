@@ -247,11 +247,15 @@ export async function createEvent(data: Record<string, unknown>): Promise<EventD
   return request<EventDetail>("/events", jsonBody(data));
 }
 
-export async function listEvents(): Promise<{ data: EventDetail[]; demo: boolean }> {
+export async function listEvents(): Promise<{
+  data: EventDetail[];
+  demo: boolean;
+  reason?: FallbackReason;
+}> {
   return withFallback(() => request<EventDetail[]>("/events"), []);
 }
 
-export async function getEvent(id: string): Promise<{ data: EventDetail; demo: boolean }> {
+export async function getEvent(id: string): Promise<{ data: EventDetail; demo: boolean; reason?: FallbackReason }> {
   return withFallback(() => request<EventDetail>(`/events/${id}`), {
     id, name: "Demo Event", slug: "demo-event", discipline: "orienteering",
     status: "published", is_public: true, entry_count: 2, matched_gps: 2, has_analysis: true,
@@ -277,7 +281,7 @@ export async function analyzeEvent(id: string) {
 export async function getEventAnalysis(
   id: string,
   course?: string
-): Promise<{ data: EventAnalysis; demo: boolean }> {
+): Promise<{ data: EventAnalysis; demo: boolean; reason?: FallbackReason }> {
   const q = course ? `?course=${encodeURIComponent(course)}` : "";
   return withFallback(() => request<EventAnalysis>(`/events/${id}/analysis${q}`), sampleEventAnalysis);
 }
@@ -292,7 +296,11 @@ export async function getEventReplay(
 
 /* ----------------------------- Coach ----------------------------- */
 
-export async function listCoachAthletes(): Promise<{ data: CoachAthlete[]; demo: boolean }> {
+export async function listCoachAthletes(): Promise<{
+  data: CoachAthlete[];
+  demo: boolean;
+  reason?: FallbackReason;
+}> {
   return withFallback(() => request<CoachAthlete[]>("/coach/athletes"), sampleCoachTrends.athletes ?? []);
 }
 
@@ -324,7 +332,11 @@ export async function createClub(name: string, country?: string) {
   return request("/clubs", jsonBody({ name, country }));
 }
 
-export async function getClubAnalytics(id: string): Promise<{ data: ClubAnalytics; demo: boolean }> {
+export async function getClubAnalytics(id: string): Promise<{
+  data: ClubAnalytics;
+  demo: boolean;
+  reason?: FallbackReason;
+}> {
   return withFallback(() => request<ClubAnalytics>(`/clubs/${id}/analytics`), sampleClubAnalytics);
 }
 
