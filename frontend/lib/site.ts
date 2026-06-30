@@ -19,3 +19,13 @@ export const CONTACT_EMAIL =
 // NEXT_PUBLIC_FORMSPREE_URL. Set to "" to fall back to the mailto flow.
 export const FORMSPREE_URL =
   process.env.NEXT_PUBLIC_FORMSPREE_URL ?? "https://formspree.io/f/mwvdqvzl";
+
+// Canonical public URL of the site — used for SEO (sitemap, robots, Open
+// Graph). Set NEXT_PUBLIC_SITE_URL in Vercel to your real domain so social
+// previews and search engines point at the right place.
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://routeforge.vercel.app"
+).replace(/\/$/, "");
+
+// Display name used in legal copy.
+export const SITE_NAME = "RouteForge";
