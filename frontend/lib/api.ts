@@ -117,19 +117,25 @@ export async function request<T>(
  * labelled fallback — when the backend cannot be reached at all (so the page
  * still renders instead of crashing). The `demo` flag drives the on-page notice.
  */
+export type FallbackReason = "demo" | "auth" | "offline";
+
 async function withFallback<T>(
   fn: () => Promise<T>,
   fallback: T
-): Promise<{ data: T; demo: boolean }> {
+): Promise<{ data: T; demo: boolean; reason?: FallbackReason }> {
   if (isDemoMode()) {
-    return { data: fallback, demo: true };
+    return { data: fallback, demo: true, reason: "demo" };
   }
   try {
     const data = await fn();
     return { data, demo: false };
-  } catch {
-    // Backend unreachable: render demo data but flag it so the UI explains why.
-    return { data: fallback, demo: true };
+  } catch (err) {
+    // Distinguish "you're not signed in" (401/403) from a real outage, so the
+    // UI can prompt sign-in instead of wrongly blaming the backend.
+    const status = err instanceof ApiError ? err.status : undefined;
+    const reason: FallbackReason =
+      status === 401 || status === 403 ? "auth" : "offline";
+    return { data: fallback, demo: true, reason };
   }
 }
 
@@ -168,7 +174,11 @@ export async function getRace(raceId: string): Promise<Race> {
   return request<Race>(`/races/${raceId}`);
 }
 
-export async function listRaces(): Promise<{ data: Race[]; demo: boolean }> {
+export async function listRaces(): Promise<{
+  data: Race[];
+  demo: boolean;
+  reason?: FallbackReason;
+}> {
   return withFallback(() => request<Race[]>("/races"), sampleRaces);
 }
 
@@ -184,6 +194,7 @@ export async function getAnalysis(
 export async function getAthlete(): Promise<{
   data: AthleteProfile;
   demo: boolean;
+  reason?: FallbackReason;
 }> {
   return withFallback(() => request<AthleteProfile>("/athletes/me"), sampleAthlete);
 }
@@ -330,7 +341,11 @@ export async function uploadTrainingSession(file: File, sport = "run") {
   return request("/training/sessions", { method: "POST", body: form });
 }
 
-export async function getTrainingAnalytics(): Promise<{ data: TrainingAnalytics; demo: boolean }> {
+export async function getTrainingAnalytics(): Promise<{
+  data: TrainingAnalytics;
+  demo: boolean;
+  reason?: FallbackReason;
+}> {
   return withFallback(() => request<TrainingAnalytics>("/training/analytics"), sampleTrainingAnalytics);
 }
 

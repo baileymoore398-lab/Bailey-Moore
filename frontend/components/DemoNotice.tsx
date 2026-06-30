@@ -13,11 +13,41 @@ import { API_BASE } from "@/lib/api";
 export function DemoNotice({
   context = "data",
   sampleRace = false,
+  reason,
 }: {
   context?: string;
   sampleRace?: boolean;
+  reason?: "demo" | "auth" | "offline";
 }) {
   const userEnabled = isDemoMode();
+
+  // Not signed in: the backend is fine, the request was just unauthenticated
+  // (401). Prompt sign-in instead of wrongly blaming the backend.
+  if (reason === "auth" && !userEnabled) {
+    return (
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent">
+        <span>
+          👋 <strong>You&apos;re not signed in.</strong> This is a sample{" "}
+          {context} — sign in (or create a free account) to see your real races
+          and training.
+        </span>
+        <span className="flex gap-2">
+          <Link
+            href="/login"
+            className="rounded-lg border border-accent/50 px-3 py-1.5 text-xs font-semibold text-accent transition hover:bg-accent/10"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg transition hover:bg-accent/90"
+          >
+            Create account
+          </Link>
+        </span>
+      </div>
+    );
+  }
 
   // A built-in sample/demo race (e.g. the "See a live demo" race) is always
   // example data by design — never alarm the user about the backend here.

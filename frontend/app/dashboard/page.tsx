@@ -39,6 +39,9 @@ export default function DashboardPage() {
   const [races, setRaces] = React.useState<Race[]>([]);
   const [me, setMe] = React.useState<MeResponse | null>(null);
   const [demo, setDemo] = React.useState(false);
+  const [demoReason, setDemoReason] = React.useState<
+    "demo" | "auth" | "offline" | undefined
+  >(undefined);
   const [authed, setAuthed] = React.useState(true);
   const [loading, setLoading] = React.useState(true);
 
@@ -64,6 +67,16 @@ export default function DashboardPage() {
       setTraining(t.data);
       setRaces(r.data);
       setDemo(a.demo || t.demo || r.demo);
+      const reasons = [a.reason, t.reason, r.reason];
+      setDemoReason(
+        reasons.includes("auth")
+          ? "auth"
+          : reasons.includes("offline")
+            ? "offline"
+            : reasons.includes("demo")
+              ? "demo"
+              : undefined
+      );
       setLoading(false);
     })();
     return () => {
@@ -102,7 +115,7 @@ export default function DashboardPage() {
 
   return (
     <div className="container-page py-10">
-      {demo && <DemoNotice context="dashboard" />}
+      {demo && <DemoNotice context="dashboard" reason={demoReason} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black tracking-tight">
