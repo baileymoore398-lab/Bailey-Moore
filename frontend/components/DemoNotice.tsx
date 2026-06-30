@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { disableDemo, isDemoMode } from "@/lib/demo";
+import { API_BASE } from "@/lib/api";
 
 /**
  * Banner shown whenever a page is rendering bundled SAMPLE data instead of real
@@ -72,6 +74,19 @@ export function DemoNotice({
               <code>CORS_ORIGINS</code>.
             </li>
           </ul>
+          <p className="mt-3 text-amber-200/90">
+            This build is configured to call{" "}
+            <code className="break-all text-amber-100">{API_BASE}</code>.{" "}
+            {API_BASE.includes("localhost") ? (
+              <strong className="text-amber-100">
+                That&apos;s localhost — NEXT_PUBLIC_API_URL wasn&apos;t set for
+                this deployment, so it can&apos;t work in the browser.
+              </strong>
+            ) : null}{" "}
+            <Link href="/debug" className="font-semibold text-amber-100 underline">
+              Run diagnostics →
+            </Link>
+          </p>
         </div>
       </div>
     </div>
