@@ -92,11 +92,15 @@ class Settings(BaseSettings):
     SMTP_STARTTLS: bool = True
     EMAIL_FROM: str | None = None
     EMAIL_FROM_NAME: str = "RouteForge"
+    # Resend (https://resend.com) HTTP API — preferred when set, as it's more
+    # reliable from cloud hosts than SMTP. Falls back to SMTP, then to logging.
+    RESEND_API_KEY: str | None = None
     # Public URL of the frontend, used to build links in emails (e.g. reset).
     FRONTEND_URL: str = "http://localhost:3000"
 
     @field_validator(
-        "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM", mode="before"
+        "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM", "RESEND_API_KEY",
+        mode="before",
     )
     @classmethod
     def _blank_to_none(cls, v):
@@ -114,12 +118,17 @@ class Settings(BaseSettings):
 
     @property
     def email_enabled(self) -> bool:
-        """True when an SMTP transport is configured for real sending."""
-        return bool(self.SMTP_HOST and (self.EMAIL_FROM or self.SMTP_USER))
+        """True when any transport (Resend or SMTP) is configured for sending."""
+        return bool(
+            self.RESEND_API_KEY
+            or (self.SMTP_HOST and (self.EMAIL_FROM or self.SMTP_USER))
+        )
 
     @property
     def email_from_addr(self) -> str:
-        return self.EMAIL_FROM or self.SMTP_USER or "no-reply@routeforge.app"
+        # Resend's shared sender works without domain verification for testing.
+        default = "onboarding@resend.dev" if self.RESEND_API_KEY else "no-reply@routeforge.app"
+        return self.EMAIL_FROM or self.SMTP_USER or default
 
     @property
     def cors_origins(self) -> List[str]:

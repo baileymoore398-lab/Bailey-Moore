@@ -49,11 +49,40 @@ RouteForge — AI race analysis for orienteers &amp; trail runners.
 </body></html>"""
 
 
+def _send_via_resend(to: str, subject: str, html: str, text: str) -> bool:
+    """Send via the Resend HTTP API. Returns True on a 2xx response."""
+    import httpx
+
+    try:
+        resp = httpx.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
+            json={
+                "from": formataddr((settings.EMAIL_FROM_NAME, settings.email_from_addr)),
+                "to": [to],
+                "subject": subject,
+                "html": html,
+                "text": text,
+            },
+            timeout=20,
+        )
+        if resp.status_code // 100 == 2:
+            logger.info("Sent email to %s via Resend: %s", to, subject)
+            return True
+        logger.error("Resend returned %s for %s: %s", resp.status_code, to, resp.text[:300])
+        return False
+    except Exception:  # noqa: BLE001 — never propagate email errors
+        logger.exception("Failed to send email via Resend to %s", to)
+        return False
+
+
 def send_email(to: str, subject: str, html: str, text: str) -> bool:
-    """Send one email. Returns True if handed to the SMTP server."""
+    """Send one email via the configured transport (Resend → SMTP → log)."""
     if not settings.email_enabled:
         logger.info("[email disabled] to=%s | subject=%s\n%s", to, subject, text)
         return False
+    if settings.RESEND_API_KEY:
+        return _send_via_resend(to, subject, html, text)
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = formataddr((settings.EMAIL_FROM_NAME, settings.email_from_addr))
