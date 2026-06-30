@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScoresRadar } from "@/components/ScoresRadar";
 import { ReplayControls } from "@/components/ReplayControls";
+import { ShareStudio } from "@/components/ShareStudio";
 import { DemoNotice } from "@/components/DemoNotice";
 import { downloadReport, downloadReportPdf } from "@/lib/report";
 import {
@@ -95,6 +96,7 @@ export function AnalysisDashboard({
         </div>
         <div className="flex items-center gap-2">
           {demo && <Badge variant="warning">Demo data</Badge>}
+          <ShareStudio analysis={analysis} />
           <div className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-center">
             <div className="text-2xl font-black text-accent">
               {analysis.scores.overall}
