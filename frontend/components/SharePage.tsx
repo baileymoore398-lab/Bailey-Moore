@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/Logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { resolveShare } from "@/lib/api";
 import {
@@ -44,13 +45,8 @@ export function SharePage({ token }: { token: string }) {
     <div className="min-h-screen bg-bg text-white">
       <div className="container-page py-10">
         <header className="mb-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent font-black text-bg">
-              R
-            </span>
-            <span className="text-lg font-bold tracking-tight">
-              Route<span className="text-accent">Forge</span>
-            </span>
+          <Link href="/" aria-label="RouteForge home">
+            <Logo size="md" />
           </Link>
           <Badge variant="muted">Shared</Badge>
         </header>

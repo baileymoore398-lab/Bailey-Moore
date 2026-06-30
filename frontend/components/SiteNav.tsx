@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { clearSession, getSessionUser, type SessionUser } from "@/lib/auth";
 import { DONATE_URL } from "@/lib/site";
+import { Logo } from "@/components/Logo";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -45,13 +46,8 @@ export function SiteNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-bg/70 backdrop-blur-xl">
       <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-bg font-black">
-            R
-          </span>
-          <span className="text-lg font-bold tracking-tight">
-            Route<span className="text-accent">Forge</span>
-          </span>
+        <Link href="/" aria-label="RouteForge home">
+          <Logo size="md" />
         </Link>
         <nav className="flex items-center gap-1">
           {links.map((l) => {
