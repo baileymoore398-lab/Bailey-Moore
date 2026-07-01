@@ -113,6 +113,51 @@ def parse_iof_xml(data: bytes) -> dict:
     return {"controls": controls, "competitors": competitors}
 
 
+def parse_winsplits_paste(text: str) -> dict:
+    """Parse split times copied from a WinSplits Online table (one athlete).
+
+    WinSplits copies two tab-separated lines per athlete: leg times, then
+    cumulative times, each value optionally followed by a "(rank)" cell. We pull
+    the cumulative sequence (the longest monotonically increasing run of times),
+    which ends at the finish time — exactly what we need to place controls.
+    """
+    def line_times(line: str) -> List[float]:
+        toks = re.split(r"\t+", line.strip()) if "\t" in line else line.split()
+        return [v for v in (_parse_clock(t) for t in toks) if v is not None]
+
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+
+    # The cumulative line is the longest non-decreasing run of times.
+    best: List[float] = []
+    for ln in lines:
+        ts = line_times(ln)
+        monotonic = len(ts) >= 2 and all(ts[i] <= ts[i + 1] + 1 for i in range(len(ts) - 1))
+        if monotonic and (len(ts) > len(best) or (len(ts) == len(best) and ts[-1] > (best[-1] if best else -1))):
+            best = ts
+
+    # Fallback: no cumulative line → treat the longest time line as leg times.
+    cumulative = True
+    if len(best) < 2:
+        longest = max((line_times(ln) for ln in lines), key=len, default=[])
+        if len(longest) < 2:
+            return {"controls": [], "competitors": []}
+        best, cumulative = longest, False
+
+    splits: List[dict] = []
+    codes: List[str] = []
+    prev = 0.0
+    for i, v in enumerate(best):
+        code = str(i + 1)
+        codes.append(code)
+        if cumulative:
+            leg, cum, prev = v - prev, v, v
+        else:
+            leg, prev = v, prev + v
+            cum = prev
+        splits.append({"code": code, "time_s": leg, "cumulative_s": cum})
+    return {"controls": ["S"] + codes + ["F"], "competitors": [{"name": "You", "splits": splits}]}
+
+
 def _split_series(values: List[Optional[float]], codes: List[str]) -> List[dict]:
     """Turn a row of clock values into split dicts, auto-detecting cumulative
     vs per-leg by monotonicity."""

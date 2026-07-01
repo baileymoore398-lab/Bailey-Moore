@@ -7,7 +7,7 @@ import { UploadZone, type UploadState } from "@/components/UploadZone";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { analyzeRace, createRace, uploadFile } from "@/lib/api";
+import { analyzeRace, createRace, pasteSplits, uploadFile } from "@/lib/api";
 import { downscaleImage } from "@/lib/image";
 import { TutorialButton } from "@/components/Tutorial";
 import type { UploadKind } from "@/lib/types";
@@ -36,6 +36,7 @@ export default function UploadPage() {
   });
   const [generating, setGenerating] = React.useState(false);
   const [genError, setGenError] = React.useState<string | null>(null);
+  const [splitsPaste, setSplitsPaste] = React.useState("");
 
   const setSlot = (kind: UploadKind, patch: Partial<Slot>) =>
     setSlots((s) => ({ ...s, [kind]: { ...s[kind], ...patch } }));
@@ -65,6 +66,15 @@ export default function UploadPage() {
         } catch (e) {
           setSlot(kind, { state: "error", error: (e as Error).message });
           if (kind !== "splits") throw e;
+        }
+      }
+
+      // Pasted splits (e.g. from WinSplits) — used when no splits file was given.
+      if (!slots.splits.file && splitsPaste.trim()) {
+        try {
+          await pasteSplits(race.id, splitsPaste);
+        } catch {
+          /* splits are optional — ignore and analyze without them */
         }
       }
 
@@ -178,15 +188,37 @@ export default function UploadPage() {
                 onFile={(f) => onFile(steps[current].kind, f)}
               />
               {steps[current].kind === "splits" && (
-                <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">
-                  <span aria-hidden>🎯</span>
-                  <span>
-                    <strong>More accurate with splits.</strong> Adding your split
-                    times pins each control to the exact moment you punched it —
-                    so control placement, leg-by-leg timing and mistake detection
-                    are far more precise. Optional, but worth it if you have them.
-                  </span>
-                </div>
+                <>
+                  <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">
+                    <span aria-hidden>🎯</span>
+                    <span>
+                      <strong>More accurate with splits.</strong> Adding your
+                      split times pins each control to the exact moment you
+                      punched it — so control placement, leg-by-leg timing and
+                      mistake detection are far more precise. Optional, but worth
+                      it if you have them.
+                    </span>
+                  </div>
+                  {!slots.splits.file && (
+                    <div className="mt-4">
+                      <label className="mb-1.5 block text-sm font-medium text-muted">
+                        …or paste from WinSplits
+                      </label>
+                      <textarea
+                        value={splitsPaste}
+                        onChange={(e) => setSplitsPaste(e.target.value)}
+                        rows={3}
+                        placeholder="On WinSplits Online, select your row (name + times), copy it, and paste here. We'll read your cumulative splits automatically."
+                        className="w-full resize-none rounded-lg border border-border bg-bg-soft px-3 py-2 text-sm outline-none focus:border-accent"
+                      />
+                      {splitsPaste.trim() && (
+                        <p className="mt-1.5 text-xs text-accent">
+                          ✓ Splits pasted — they&apos;ll be used when you generate.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
               <div className="mt-6 flex justify-between">
                 <Button

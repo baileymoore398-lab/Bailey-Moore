@@ -170,6 +170,18 @@ export async function analyzeRace(raceId: string): Promise<AnalyzeResult> {
   return request<AnalyzeResult>(`/races/${raceId}/analyze`, { method: "POST" });
 }
 
+// Submit split times pasted from a WinSplits table (or any delimited text).
+export async function pasteSplits(
+  raceId: string,
+  text: string
+): Promise<{ parsed?: boolean; detail?: string }> {
+  return request(`/races/${raceId}/splits/paste`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 export async function getRace(raceId: string): Promise<Race> {
   return request<Race>(`/races/${raceId}`);
 }

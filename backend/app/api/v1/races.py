@@ -5,6 +5,7 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.v1.serializers import analysis_to_out, race_to_out
@@ -21,7 +22,7 @@ from app.models import (
 )
 from app.schemas.schemas import AnalysisOut, AnalyzeResponse, RaceOut, UploadOut
 from app.services.gps.parser import parse_track
-from app.services.splits.parser import parse_splits
+from app.services.splits.parser import parse_splits, parse_winsplits_paste
 from app.services.storage.store import get_storage
 
 logger = logging.getLogger(__name__)
@@ -203,6 +204,53 @@ async def upload_splits(
         race.split_set = SplitSet(race_id=race.id, data=parsed, original_key=key, source=source)
     db.commit()
     return UploadOut(id=race.split_set.id, kind="splits", filename=file.filename, parsed=True)
+
+
+class SplitsPasteIn(BaseModel):
+    text: str
+
+
+@router.post("/{race_id}/splits/paste", response_model=UploadOut)
+def paste_splits(
+    race_id: str,
+    body: SplitsPasteIn,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
+    """Accept split times pasted from a WinSplits Online table (or any delimited
+    text). Parses out the athlete's cumulative splits."""
+    race = _get_race_or_404(race_id, db)
+    text = body.text or ""
+    parsed = {"controls": [], "competitors": []}
+    try:
+        parsed = parse_winsplits_paste(text)
+        if not parsed.get("competitors"):
+            # Fall back to the generic delimited/JSON/XML parser.
+            parsed = parse_splits("pasted.txt", text.encode("utf-8"))
+    except Exception:  # noqa: BLE001
+        logger.exception("Pasted splits parse failed")
+
+    if not parsed.get("competitors"):
+        return UploadOut(
+            id="unparsed",
+            kind="splits",
+            filename="pasted",
+            parsed=False,
+            detail="Couldn't read split times from the pasted text.",
+        )
+
+    key = f"splits/{race.id}/pasted.txt"
+    get_storage().put(key, text.encode("utf-8"), "text/plain")
+    if race.split_set:
+        race.split_set.data = parsed
+        race.split_set.original_key = key
+        race.split_set.source = "winsplits_paste"
+    else:
+        race.split_set = SplitSet(
+            race_id=race.id, data=parsed, original_key=key, source="winsplits_paste"
+        )
+    db.commit()
+    return UploadOut(id=race.split_set.id, kind="splits", filename="pasted", parsed=True)
 
 
 @router.post("/{race_id}/analyze", response_model=AnalyzeResponse)
