@@ -22,6 +22,59 @@ def _fmt_time(seconds: float) -> str:
     return f"{m}:{s:02d}"
 
 
+def _facts(
+    metrics: Dict[str, float],
+    scores: Dict[str, float],
+    events: List[dict],
+    legs: List[dict],
+) -> dict:
+    """Pre-computed, correctly-formatted figures for the LLM to quote verbatim.
+
+    Passing these alongside the raw data — and instructing the model to use only
+    numbers it is given — is what keeps the AI report factually accurate instead
+    of inventing or mis-deriving values.
+    """
+    total_lost = sum(e.get("lost_s", 0.0) for e in events)
+    worst_leg = None
+    if legs:
+        wl = max(legs, key=lambda l: l.get("time_loss_s", 0.0) or 0.0)
+        if (wl.get("time_loss_s") or 0.0) > 0:
+            worst_leg = (
+                f"Leg {wl.get('number')} "
+                f"({wl.get('from_control')}→{wl.get('to_control')}) "
+                f"lost {_fmt_time(wl.get('time_loss_s', 0.0))}"
+            )
+    return {
+        "distance_km": round(metrics.get("distance_m", 0.0) / 1000.0, 2),
+        "duration": _fmt_time(metrics.get("duration_s", 0.0)),
+        "moving_time": _fmt_time(metrics.get("moving_time_s", 0.0)),
+        "climb_m": round(metrics.get("total_climb_m", 0.0)),
+        "avg_pace_min_km": metrics.get("avg_pace_min_km"),
+        "avg_speed_kmh": metrics.get("avg_speed_kmh"),
+        "scores_out_of_100": scores,
+        "total_time_lost": _fmt_time(total_lost),
+        "significant_mistakes": sum(
+            1 for e in events if e.get("lost_s", 0.0) >= 5
+        ),
+        "worst_leg": worst_leg,
+    }
+
+
+def _as_list(v) -> List[str]:
+    """Coerce a model field to a clean list of strings (robust to bad output)."""
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x).strip() for x in v if str(x).strip()]
+    return [str(v).strip()] if str(v).strip() else []
+
+
+def _as_str(v) -> str:
+    if isinstance(v, list):
+        return " ".join(str(x) for x in v)
+    return str(v).strip() if v is not None else ""
+
+
 def _rule_based_report(
     metrics: Dict[str, float],
     scores: Dict[str, float],
@@ -209,15 +262,29 @@ def _openai_report(payload: dict) -> dict | None:
     try:
         client = OpenAI(api_key=settings.OPENAI_API_KEY)
         system = (
-            "You are an elite orienteering and endurance coach. Given structured "
-            "race analysis JSON, write a detailed, specific, encouraging coaching "
-            "report. Respond ONLY with JSON matching: {summary, overview, "
-            "strengths[], weaknesses[], mistakes[], advice[], training[], "
-            "focus_areas[]}. 'summary' is 2-3 sentences. 'overview' is a fuller "
-            "3-5 sentence narrative covering navigation, fitness, execution and "
-            "route choice. 'training' is 3-5 concrete drills/sessions to improve "
-            "the weakest areas. 'focus_areas' names the 1-2 priorities. Reference "
-            "concrete legs, times and distances from the data throughout."
+            "You are an elite orienteering and endurance coach writing a factual, "
+            "specific, encouraging race report.\n\n"
+            "ACCURACY RULES (critical):\n"
+            "1. Use ONLY numbers that appear in the provided JSON (the 'facts', "
+            "'metrics', 'scores', 'legs', 'events' and 'route_legs' fields).\n"
+            "2. NEVER invent, guess, estimate, extrapolate or re-calculate any "
+            "number. When you cite a figure, copy it exactly from the data, "
+            "including its units.\n"
+            "3. If a fact is not present in the data, do not state it. Do not "
+            "claim ranks, positions, weather, heart rate or anything not given.\n"
+            "4. The 'facts' object contains pre-formatted correct values — prefer "
+            "quoting those verbatim (e.g. distance_km, duration, climb_m, "
+            "total_time_lost, worst_leg). Scores are out of 100. Times are m:ss.\n"
+            "5. Do not contradict the scores: only call an area a strength if its "
+            "score is high, or a weakness if its score is low.\n\n"
+            "Respond ONLY with a JSON object matching exactly: {summary, "
+            "overview, strengths[], weaknesses[], mistakes[], advice[], "
+            "training[], focus_areas[]}. 'summary' is 2-3 sentences. 'overview' "
+            "is a fuller 3-5 sentence narrative covering navigation, fitness, "
+            "execution and route choice. 'training' is 3-5 concrete drills to "
+            "improve the weakest areas. 'focus_areas' names the 1-2 lowest-scoring "
+            "priorities. Be specific and reference the real legs, times and "
+            "distances from the data."
         )
         resp = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
@@ -226,17 +293,28 @@ def _openai_report(payload: dict) -> dict | None:
                 {"role": "user", "content": json.dumps(payload)},
             ],
             response_format={"type": "json_object"},
-            temperature=0.4,
+            temperature=0.0,  # deterministic + factual, no creative drift
+            seed=7,
         )
-        data = json.loads(resp.choices[0].message.content)
-        data["generated_by"] = settings.OPENAI_MODEL
-        # Ensure all keys exist (summary/overview are strings, rest are lists).
-        for key in ("summary", "overview"):
-            data.setdefault(key, "")
-        if not data.get("overview"):
-            data["overview"] = data.get("summary", "")
-        for key in ("strengths", "weaknesses", "mistakes", "advice", "training", "focus_areas"):
-            data.setdefault(key, [])
+        content = resp.choices[0].message.content
+        if not content:
+            return None
+        raw = json.loads(content)
+        # Normalise types so malformed output can't corrupt the report.
+        data = {
+            "summary": _as_str(raw.get("summary")),
+            "overview": _as_str(raw.get("overview")) or _as_str(raw.get("summary")),
+            "strengths": _as_list(raw.get("strengths")),
+            "weaknesses": _as_list(raw.get("weaknesses")),
+            "mistakes": _as_list(raw.get("mistakes")),
+            "advice": _as_list(raw.get("advice")),
+            "training": _as_list(raw.get("training")),
+            "focus_areas": _as_list(raw.get("focus_areas")),
+            "generated_by": settings.OPENAI_MODEL,
+        }
+        # A usable report must at least have a summary; otherwise fall back.
+        if not data["summary"]:
+            return None
         return data
     except Exception as exc:  # pragma: no cover - network/credentials dependent
         logger.warning("OpenAI coaching failed, falling back to rule-based: %s", exc)
@@ -251,6 +329,7 @@ def generate_coach_report(
     route_legs: List[dict],
 ) -> dict:
     payload = {
+        "facts": _facts(metrics, scores, events, legs),
         "metrics": metrics,
         "scores": scores,
         "events": events,
