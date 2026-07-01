@@ -290,7 +290,10 @@ def _openai_report(payload: dict) -> dict | None:
     except ImportError:  # pragma: no cover
         return None
     try:
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        # No SDK retries and a short timeout: a quota/auth error (429
+        # insufficient_quota) never succeeds on retry, so fail over to the
+        # rule-based report instantly instead of stalling the analysis ~3s.
+        client = OpenAI(api_key=settings.OPENAI_API_KEY, max_retries=0, timeout=20.0)
         system = (
             "You are an elite orienteering and endurance coach writing a factual, "
             "specific, encouraging race report.\n\n"
