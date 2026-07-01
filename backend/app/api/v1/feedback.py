@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_optional_user, require_role
 from app.database import get_db
-from app.models import AnalysisFeedback, Analysis, Race, User
+from app.models import Analysis, AnalysisFeedback, Race, User
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
