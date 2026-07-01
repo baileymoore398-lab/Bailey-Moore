@@ -287,19 +287,30 @@ def parse_splits_json(data: bytes) -> dict:
     return {"controls": [], "competitors": []}
 
 
+_EMPTY = {"controls": [], "competitors": []}
+
+
 def parse_splits(filename: str, data: bytes) -> dict:
+    """Parse split times from any supported format.
+
+    Never raises: an unrecognised or malformed file yields an empty result so
+    the (optional) splits upload can degrade gracefully instead of erroring.
+    """
     name = (filename or "").lower()
-    if name.endswith(".xml"):
-        return parse_iof_xml(data)
-    if name.endswith(".json"):
-        return parse_splits_json(data)
-    # WinSplits / SportIdent / generic delimited exports (comma, tab or
-    # semicolon — the CSV reader sniffs the delimiter).
-    if name.endswith((".csv", ".txt", ".tsv", ".spl")):
+    try:
+        if name.endswith(".xml"):
+            return parse_iof_xml(data)
+        if name.endswith(".json"):
+            return parse_splits_json(data)
+        # WinSplits / SportIdent / generic delimited exports (comma, tab or
+        # semicolon — the CSV reader sniffs the delimiter).
+        if name.endswith((".csv", ".txt", ".tsv", ".spl")):
+            return parse_splits_csv(data)
+        head = data[:256].lstrip().lower()
+        if head.startswith(b"{") or head.startswith(b"["):
+            return parse_splits_json(data)
+        if head.startswith(b"<?xml") or b"resultlist" in head:
+            return parse_iof_xml(data)
         return parse_splits_csv(data)
-    head = data[:256].lstrip().lower()
-    if head.startswith(b"{") or head.startswith(b"["):
-        return parse_splits_json(data)
-    if head.startswith(b"<?xml") or b"resultlist" in head:
-        return parse_iof_xml(data)
-    return parse_splits_csv(data)
+    except Exception:  # noqa: BLE001 — malformed file → empty, not a crash
+        return dict(_EMPTY)

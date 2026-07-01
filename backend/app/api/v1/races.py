@@ -1,6 +1,7 @@
 """Race lifecycle endpoints: create, upload map/gps/splits, analyze, fetch."""
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -23,6 +24,7 @@ from app.services.gps.parser import parse_track
 from app.services.splits.parser import parse_splits
 from app.services.storage.store import get_storage
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/races", tags=["races"])
 
 MAX_UPLOAD_BYTES = 60 * 1024 * 1024  # 60 MB
@@ -160,7 +162,13 @@ async def upload_splits(
 ):
     race = _get_race_or_404(race_id, db)
     data = await _read_upload(file)
-    parsed = parse_splits(file.filename or "", data)
+    # Splits are optional and file formats vary wildly — a parse failure must
+    # never 500. Treat any error as "couldn't read", and continue without splits.
+    try:
+        parsed = parse_splits(file.filename or "", data)
+    except Exception:  # noqa: BLE001
+        logger.exception("Splits parse failed for %s", file.filename)
+        parsed = {"controls": [], "competitors": []}
     key = f"splits/{race.id}/{file.filename or 'splits'}"
     get_storage().put(key, data, file.content_type)
     _register_upload(db, race, user, "splits", key, file, len(data))
