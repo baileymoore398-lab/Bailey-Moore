@@ -155,10 +155,10 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-5 py-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted">
             How RouteForge works · {i + 1}/{STEPS.length}
           </span>
@@ -171,7 +171,7 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="px-6 py-7">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <div className="text-5xl">{step.icon}</div>
           <h2 className="mt-4 text-2xl font-black tracking-tight">{step.title}</h2>
 
@@ -196,7 +196,7 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 pb-4">
+        <div className="flex shrink-0 justify-center gap-1.5 pb-4 pt-1">
           {STEPS.map((_, idx) => (
             <button
               key={idx}
@@ -210,7 +210,7 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-5 py-4">
           <button
             onClick={onClose}
             className="text-sm font-medium text-muted transition hover:text-white"
