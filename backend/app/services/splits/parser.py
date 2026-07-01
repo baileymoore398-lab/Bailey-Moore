@@ -26,22 +26,40 @@ def _localname(tag: str) -> str:
 
 
 def _parse_clock(value: str) -> Optional[float]:
-    """Parse 'mm:ss', 'h:mm:ss', or plain seconds into seconds."""
+    """Parse a split time into seconds.
+
+    Handles ``mm:ss`` and ``h:mm:ss`` as well as the WinSplits / European
+    convention that uses a dot between minutes and seconds (``3.58`` = 3:58,
+    ``21.55`` = 21:55, ``1:04.56`` = 1:04:56). Plain integers/decimals are
+    treated as seconds, and a leading position marker in parentheses is ignored.
+    """
     if value is None:
         return None
     value = value.strip()
-    if not value or value in {"-", "--", "n/a"}:
+    # Drop a trailing "(3)" style position marker if present.
+    value = re.sub(r"\s*\(\d+\)\s*$", "", value).strip()
+    if not value or value.lower() in {"-", "--", "---", "n/a", "mp", "dns", "dnf"}:
         return None
-    if re.fullmatch(r"\d+(\.\d+)?", value):
+
+    if ":" in value:
+        # Clock with hours/minutes; a dot (if any) separates seconds.
+        parts = re.split(r"[:.]", value)
+    elif re.fullmatch(r"\d+\.\d{2}", value):
+        # WinSplits "m.ss" (exactly two second digits) → minutes.seconds.
+        parts = value.split(".")
+    elif re.fullmatch(r"\d+(\.\d+)?", value):
+        # Plain seconds (integer or decimal).
         return float(value)
-    parts = value.split(":")
+    else:
+        parts = re.split(r"[:.]", value)
+
     try:
-        parts = [float(p) for p in parts]
+        nums = [float(p) for p in parts]
     except ValueError:
         return None
     sec = 0.0
-    for p in parts:
-        sec = sec * 60 + p
+    for n in nums:
+        sec = sec * 60 + n
     return sec
 
 
