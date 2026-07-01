@@ -67,7 +67,10 @@ export function SiteNav() {
               </Link>
             );
           })}
-          <TutorialButton className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent" />
+          <TutorialButton
+            autoOpen
+            className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent"
+          />
           <a
             href={DONATE_URL}
             target="_blank"

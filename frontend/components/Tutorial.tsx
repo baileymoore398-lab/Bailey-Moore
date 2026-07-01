@@ -74,18 +74,53 @@ const STEPS: Step[] = [
   },
 ];
 
+const SEEN_KEY = "rf-tutorial-seen";
+
+function markTutorialSeen() {
+  try {
+    localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    /* storage unavailable — no-op */
+  }
+}
+
 export function TutorialButton({
   className,
   label = "Tutorial",
+  autoOpen = false,
 }: {
   className?: string;
   label?: string;
+  /** Open automatically the first time a visitor ever loads the app. */
+  autoOpen?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
+
+  // First-visit auto-open. Runs once on mount; the localStorage flag ensures
+  // returning visitors are never interrupted again.
+  React.useEffect(() => {
+    if (!autoOpen) return;
+    let seen = true;
+    try {
+      seen = localStorage.getItem(SEEN_KEY) === "1";
+    } catch {
+      /* storage blocked — treat as seen so we don't nag */
+    }
+    if (!seen) {
+      setOpen(true);
+      markTutorialSeen();
+    }
+  }, [autoOpen]);
+
+  const show = () => {
+    markTutorialSeen();
+    setOpen(true);
+  };
+
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={show}
         className={
           className ??
           "rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent"
