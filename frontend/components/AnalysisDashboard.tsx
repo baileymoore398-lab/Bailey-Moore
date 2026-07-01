@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScoresRadar } from "@/components/ScoresRadar";
 import { ReplayControls } from "@/components/ReplayControls";
 import { ShareStudio } from "@/components/ShareStudio";
+import { CoachFeedback } from "@/components/CoachFeedback";
 import { DemoNotice } from "@/components/DemoNotice";
 import { downloadReport, downloadReportPdf } from "@/lib/report";
 import {
@@ -492,6 +493,8 @@ export function AnalysisDashboard({
               )}
             </>
           )}
+
+          <CoachFeedback analysisId={demo ? null : analysis.id} />
         </CardContent>
       </Card>
     </div>

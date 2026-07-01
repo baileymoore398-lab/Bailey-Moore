@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.email import send_welcome_email
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database import get_db
@@ -15,6 +16,13 @@ from app.models import Athlete, Plan, Subscription, User
 from app.schemas.schemas import LoginRequest, RegisterRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _apply_admin_grant(db: Session, user: User) -> None:
+    """Grant superuser to configured admin emails on sign-in."""
+    if user.email.lower() in settings.admin_emails and not user.is_superuser:
+        user.is_superuser = True
+        db.commit()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -41,6 +49,7 @@ def register(
     )
     db.add(Subscription(user_id=user.id, plan=Plan.free.value))
     db.commit()
+    _apply_admin_grant(db, user)
     # Fire the welcome email after the response is sent; failures are swallowed
     # inside the email layer so they never affect signup.
     background.add_task(send_welcome_email, user.email, user.full_name)
@@ -53,5 +62,6 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).one_or_none()
     if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+    _apply_admin_grant(db, user)
     token = create_access_token(user.id, {"email": user.email, "role": user.role})
     return TokenResponse(access_token=token, user_id=user.id, email=user.email)

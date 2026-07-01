@@ -74,6 +74,16 @@ class Settings(BaseSettings):
     # --- Subscriptions / quotas ---
     FREE_PLAN_MONTHLY_ANALYSES: int = 3
 
+    # --- Admin ---
+    # Comma-separated emails granted admin/superuser access on sign-in — used to
+    # gate owner-only views such as the AI feedback results. Set this to your own
+    # email so only you can see the feedback dashboard.
+    ADMIN_EMAILS: str = "route.forge.official@gmail.com"
+
+    @property
+    def admin_emails(self) -> set[str]:
+        return {e.strip().lower() for e in (self.ADMIN_EMAILS or "").split(",") if e.strip()}
+
     # --- Third-party integrations ---
     STRAVA_CLIENT_ID: str | None = None
     STRAVA_CLIENT_SECRET: str | None = None

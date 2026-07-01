@@ -7,6 +7,7 @@ from app.models.analysis import Analysis, AnalysisStatus, Mistake, RouteSegment
 from app.models.base import TimestampMixin, gen_uuid
 from app.models.coaching import CoachAthlete, CoachNote, Team, TeamMembership
 from app.models.event import Event, EventAnalysis, EventEntry
+from app.models.feedback import AnalysisFeedback
 from app.models.race import Control, GpsTrack, MapAsset, Race, RaceStatus, SplitSet
 from app.models.sharing import ShareLink, gen_token
 from app.models.subscription import Plan, Subscription
@@ -36,6 +37,7 @@ __all__ = [
     "Event",
     "EventEntry",
     "EventAnalysis",
+    "AnalysisFeedback",
     "AuditLog",
     "Upload",
     # Coaching / teams

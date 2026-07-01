@@ -412,3 +412,46 @@ export async function getRaceHeatmap(
     { mode, cell_m: 12, max_weight: 1, points: [] }
   );
 }
+
+/* ----------------------------- Feedback ----------------------------- */
+
+export interface FeedbackSummary {
+  total: number;
+  up: number;
+  down: number;
+  satisfaction_pct: number | null;
+}
+
+export interface FeedbackRow {
+  id: string;
+  analysis_id: string | null;
+  rating: string;
+  comment: string | null;
+  coach_generated_by: string | null;
+  discipline: string | null;
+  overall: number | null;
+  created_at: string | null;
+}
+
+// Submit a thumbs up/down (and optional comment) on an AI coach report.
+export async function submitFeedback(
+  analysisId: string | null,
+  rating: "up" | "down",
+  comment?: string
+): Promise<{ ok: boolean }> {
+  return request("/feedback", jsonBody({
+    analysis_id: analysisId,
+    rating,
+    comment: comment?.trim() || null,
+  }));
+}
+
+// Admin-only: aggregate feedback stats.
+export async function getFeedbackSummary(): Promise<FeedbackSummary> {
+  return request<FeedbackSummary>("/feedback/summary");
+}
+
+// Admin-only: recent feedback rows.
+export async function listFeedback(): Promise<FeedbackRow[]> {
+  return request<FeedbackRow[]>("/feedback");
+}

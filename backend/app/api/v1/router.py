@@ -10,6 +10,7 @@ from app.api.v1 import (
     clubs,
     coach,
     events,
+    feedback,
     files,
     integrations,
     races,
@@ -35,3 +36,4 @@ api_router.include_router(training.router)
 api_router.include_router(sharing.router)
 api_router.include_router(replay.router)
 api_router.include_router(billing.router)
+api_router.include_router(feedback.router)

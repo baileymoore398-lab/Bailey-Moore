@@ -146,6 +146,11 @@ export default function DashboardPage() {
         <Button variant="outline" asChild>
           <Link href="/events">View events</Link>
         </Button>
+        {me?.is_superuser && (
+          <Button variant="ghost" asChild>
+            <Link href="/admin/feedback">🔒 AI feedback</Link>
+          </Button>
+        )}
       </div>
 
       {/* Stat cards */}

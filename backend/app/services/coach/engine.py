@@ -75,6 +75,36 @@ def _as_str(v) -> str:
     return str(v).strip() if v is not None else ""
 
 
+def _fetch_liked_exemplars(limit: int = 2) -> List[str]:
+    """Excerpts from past reports that users rated 👍 — the learning signal.
+
+    Feeding these to the model as style references makes future reports mirror
+    what real users found useful. Fails safe (returns []) if the DB is
+    unreachable, so generation is never blocked by the learning loop.
+    """
+    try:
+        from app.database import SessionLocal
+        from app.models import AnalysisFeedback
+
+        db = SessionLocal()
+        try:
+            rows = (
+                db.query(AnalysisFeedback)
+                .filter(
+                    AnalysisFeedback.rating == "up",
+                    AnalysisFeedback.coach_summary.isnot(None),
+                )
+                .order_by(AnalysisFeedback.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+            return [r.coach_summary for r in rows if r.coach_summary]
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001 — learning is best-effort
+        return []
+
+
 def _rule_based_report(
     metrics: Dict[str, float],
     scores: Dict[str, float],
@@ -286,12 +316,26 @@ def _openai_report(payload: dict) -> dict | None:
             "priorities. Be specific and reference the real legs, times and "
             "distances from the data."
         )
+        messages = [{"role": "system", "content": system}]
+        # Learning loop: steer style toward reports that real users rated highly.
+        exemplars = _fetch_liked_exemplars()
+        if exemplars:
+            ex = "\n\n".join(f"• {e}" for e in exemplars)
+            messages.append(
+                {
+                    "role": "system",
+                    "content": (
+                        "Below are excerpts from past reports that users rated "
+                        "highly. Match their specificity, tone and structure. Do "
+                        "NOT reuse their numbers — use only this race's data:\n"
+                        f"{ex}"
+                    ),
+                }
+            )
+        messages.append({"role": "user", "content": json.dumps(payload)})
         resp = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": json.dumps(payload)},
-            ],
+            messages=messages,
             response_format={"type": "json_object"},
             temperature=0.0,  # deterministic + factual, no creative drift
             seed=7,
