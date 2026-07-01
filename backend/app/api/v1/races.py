@@ -161,10 +161,26 @@ async def upload_splits(
     race = _get_race_or_404(race_id, db)
     data = await _read_upload(file)
     parsed = parse_splits(file.filename or "", data)
-    if not parsed.get("competitors"):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "No splits parsed from file")
     key = f"splits/{race.id}/{file.filename or 'splits'}"
     get_storage().put(key, data, file.content_type)
+    _register_upload(db, race, user, "splits", key, file, len(data))
+
+    # Splits are optional. If we couldn't read any times, keep the raw file but
+    # don't fail the upload — the analysis just runs without split-based data.
+    if not parsed.get("competitors"):
+        db.commit()
+        return UploadOut(
+            id=race.split_set.id if race.split_set else "unparsed",
+            kind="splits",
+            filename=file.filename,
+            parsed=False,
+            detail=(
+                "We couldn't read split times from this file, so your analysis "
+                "will run without them. Supported: a WinSplits/IOF export, or a "
+                "simple CSV of control,time (or control,split,cumulative)."
+            ),
+        )
+
     _fn = (file.filename or "").lower()
     source = (
         "iof_xml" if _fn.endswith(".xml")
@@ -177,9 +193,8 @@ async def upload_splits(
         race.split_set.source = source
     else:
         race.split_set = SplitSet(race_id=race.id, data=parsed, original_key=key, source=source)
-    _register_upload(db, race, user, "splits", key, file, len(data))
     db.commit()
-    return UploadOut(id=race.split_set.id, kind="splits", filename=file.filename)
+    return UploadOut(id=race.split_set.id, kind="splits", filename=file.filename, parsed=True)
 
 
 @router.post("/{race_id}/analyze", response_model=AnalyzeResponse)

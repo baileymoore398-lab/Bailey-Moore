@@ -79,6 +79,8 @@ class UploadOut(BaseModel):
     filename: Optional[str] = None
     url: Optional[str] = None
     point_count: Optional[int] = None
+    parsed: Optional[bool] = None
+    detail: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):
