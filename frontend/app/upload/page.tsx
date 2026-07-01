@@ -20,9 +20,9 @@ interface Slot {
 }
 
 const steps = [
-  { kind: "map" as const, n: 1, label: "Map", title: "Map photo (optional)", accept: "image/*", hint: "PNG or JPG of your printed map — optional", required: false },
-  { kind: "gps" as const, n: 2, label: "GPS", title: "GPS track", accept: ".gpx,.fit,.tcx", hint: ".gpx, .fit or .tcx", required: true },
-  { kind: "splits" as const, n: 3, label: "Splits", title: "Splits (optional)", accept: ".csv,.xml", hint: ".csv or .xml from your timing system", required: false },
+  { kind: "map" as const, n: 1, label: "Map", title: "Map photo (optional)", accept: "image/*,.heic,.heif", hint: "JPG, PNG or HEIC of your printed map — optional", required: false },
+  { kind: "gps" as const, n: 2, label: "GPS", title: "GPS track", accept: ".gpx,.fit,.tcx,.kml,.geojson,.json,.csv", hint: ".gpx, .fit, .tcx, .kml, .geojson or .csv", required: true },
+  { kind: "splits" as const, n: 3, label: "Splits", title: "Splits (optional)", accept: ".csv,.tsv,.txt,.xml,.spl,.json", hint: ".csv, .tsv, .xml (IOF), .spl or .json from your timing system", required: false },
 ];
 
 export default function UploadPage() {

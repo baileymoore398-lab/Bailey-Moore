@@ -150,13 +150,56 @@ def parse_splits_csv(data: bytes) -> dict:
     return {"controls": controls, "competitors": competitors}
 
 
+def parse_splits_json(data: bytes) -> dict:
+    """Parse a flexible JSON splits export.
+
+    Accepts either the normalized shape ({controls, competitors:[{name,splits}]})
+    or a simple list of {name, splits:[{code, time|cumulative}]} objects.
+    """
+    import json
+
+    obj = json.loads(data.decode("utf-8-sig", errors="replace"))
+    if isinstance(obj, dict) and "competitors" in obj:
+        # Already close to normalized — pass through, filling any gaps.
+        competitors = []
+        codes: List[str] = []
+        for c in obj.get("competitors", []):
+            splits = []
+            prev = 0.0
+            for s in c.get("splits", []):
+                code = str(s.get("code") or s.get("control") or "")
+                cum = _parse_clock(str(s.get("cumulative_s", s.get("cumulative", ""))))
+                leg = _parse_clock(str(s.get("time_s", s.get("time", ""))))
+                if cum is None and leg is not None:
+                    cum = prev + leg
+                if leg is None and cum is not None:
+                    leg = cum - prev
+                if cum is None:
+                    continue
+                if code and code not in codes:
+                    codes.append(code)
+                splits.append({"code": code, "time_s": leg or 0.0, "cumulative_s": cum})
+                prev = cum
+            if splits:
+                competitors.append({"name": c.get("name", "Unknown"), "splits": splits})
+        controls = obj.get("controls") or (["S"] + codes + ["F"] if codes else [])
+        return {"controls": controls, "competitors": competitors}
+    return {"controls": [], "competitors": []}
+
+
 def parse_splits(filename: str, data: bytes) -> dict:
     name = (filename or "").lower()
     if name.endswith(".xml"):
         return parse_iof_xml(data)
-    if name.endswith(".csv") or name.endswith(".txt"):
+    if name.endswith(".json"):
+        return parse_splits_json(data)
+    # WinSplits / SportIdent / generic delimited exports (comma, tab or
+    # semicolon — the CSV reader sniffs the delimiter).
+    if name.endswith((".csv", ".txt", ".tsv", ".spl")):
         return parse_splits_csv(data)
     head = data[:256].lstrip().lower()
+    if head.startswith(b"{") or head.startswith(b"["):
+        return parse_splits_json(data)
     if head.startswith(b"<?xml") or b"resultlist" in head:
         return parse_iof_xml(data)
     return parse_splits_csv(data)

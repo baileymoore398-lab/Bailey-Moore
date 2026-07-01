@@ -165,7 +165,12 @@ async def upload_splits(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "No splits parsed from file")
     key = f"splits/{race.id}/{file.filename or 'splits'}"
     get_storage().put(key, data, file.content_type)
-    source = "iof_xml" if (file.filename or "").lower().endswith(".xml") else "csv"
+    _fn = (file.filename or "").lower()
+    source = (
+        "iof_xml" if _fn.endswith(".xml")
+        else "json" if _fn.endswith(".json")
+        else "csv"
+    )
     if race.split_set:
         race.split_set.data = parsed
         race.split_set.original_key = key
