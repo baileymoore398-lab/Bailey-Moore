@@ -218,6 +218,22 @@ def parse_kml(data: bytes) -> List[TrackPoint]:
     return points
 
 
+def parse_kmz(data: bytes) -> List[TrackPoint]:
+    """Parse a KMZ (a ZIP archive containing a KML document)."""
+    import zipfile
+
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        names = zf.namelist()
+        # Prefer the standard doc.kml, else the first .kml entry.
+        kml_name = next(
+            (n for n in names if n.lower() == "doc.kml"),
+            next((n for n in names if n.lower().endswith(".kml")), None),
+        )
+        if kml_name is None:
+            raise ValueError("KMZ archive contains no .kml file.")
+        return parse_kml(zf.read(kml_name))
+
+
 def parse_geojson(data: bytes) -> List[TrackPoint]:
     """Parse GeoJSON: a LineString/MultiLineString path, or a list of points."""
     import json
@@ -274,12 +290,19 @@ def parse_track(filename: str, data: bytes) -> List[TrackPoint]:
         return parse_fit(data)
     if name.endswith(".kml"):
         return parse_kml(data)
+    if name.endswith(".kmz"):
+        return parse_kmz(data)
     if name.endswith(".geojson") or name.endswith(".json"):
         return parse_geojson(data)
     if name.endswith(".csv"):
         return parse_csv(data)
     # Content sniffing fallback.
     head = data[:512].lstrip()
+    if head.startswith(b"PK\x03\x04"):  # ZIP magic → likely KMZ
+        try:
+            return parse_kmz(data)
+        except Exception:  # noqa: BLE001 — fall through if not a KMZ
+            pass
     if head.startswith(b"{") or head.startswith(b"["):
         try:
             return parse_geojson(data)
