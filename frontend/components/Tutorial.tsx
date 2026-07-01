@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -135,9 +136,12 @@ export function TutorialButton({
 
 function TutorialModal({ onClose }: { onClose: () => void }) {
   const [i, setI] = React.useState(0);
+  const [mounted, setMounted] = React.useState(false);
   const step = STEPS[i];
   const isFirst = i === 0;
   const isLast = i === STEPS.length - 1;
+
+  React.useEffect(() => setMounted(true), []);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -149,7 +153,18 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [i, onClose]);
 
-  return (
+  // Lock background scroll while the tutorial is open.
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
       onClick={onClose}
@@ -237,6 +252,7 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
