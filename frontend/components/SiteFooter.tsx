@@ -12,6 +12,12 @@ export function SiteFooter() {
         <div className="flex flex-col items-center gap-3 sm:items-end">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <Link
+              href="/faq"
+              className="text-xs font-medium text-muted transition-colors hover:text-white"
+            >
+              FAQ
+            </Link>
+            <Link
               href="/contact"
               className="text-xs font-medium text-muted transition-colors hover:text-white"
             >

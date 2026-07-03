@@ -22,6 +22,7 @@ export function SiteNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const sync = () => setUser(getSessionUser());
@@ -34,8 +35,14 @@ export function SiteNav() {
     };
   }, []);
 
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const logout = () => {
     clearSession();
+    setMenuOpen(false);
     router.push("/login");
   };
 
@@ -44,39 +51,40 @@ export function SiteNav() {
     return null;
   }
 
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-bg/70 backdrop-blur-xl">
       <div className="container-page flex h-16 items-center justify-between">
         <Link href="/" aria-label="RouteForge home">
           <Logo size="md" />
         </Link>
+
+        {/* Desktop nav */}
         <nav className="flex items-center gap-1">
-          {links.map((l) => {
-            const active =
-              pathname === l.href || pathname.startsWith(l.href + "/");
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  "hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:block",
-                  active ? "text-accent" : "text-muted hover:text-white"
-                )}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={cn(
+                "hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:block",
+                isActive(l.href) ? "text-accent" : "text-muted hover:text-white"
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
           <TutorialButton
             autoOpen
-            className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent"
+            className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent sm:block"
           />
           <a
             href={DONATE_URL}
             target="_blank"
             rel="noopener noreferrer"
             title="Support RouteForge"
-            className="mr-1 hidden items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent sm:inline-flex"
+            className="mr-1 hidden items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent lg:inline-flex"
           >
             Support
           </a>
@@ -90,7 +98,7 @@ export function SiteNav() {
               </Link>
               <button
                 onClick={logout}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-white"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-white sm:block"
               >
                 Sign out
               </button>
@@ -99,20 +107,119 @@ export function SiteNav() {
             <>
               <Link
                 href="/login"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted hover:text-white"
+                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted hover:text-white sm:block"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="ml-1 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg transition hover:bg-accent/90"
+                className="ml-1 hidden rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg transition hover:bg-accent/90 sm:block"
               >
                 Get started
               </Link>
             </>
           )}
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="grid h-10 w-10 place-items-center rounded-lg text-white transition hover:bg-bg-elevated/60 sm:hidden"
+          >
+            <span className="relative block h-3.5 w-5">
+              <span
+                className={cn(
+                  "absolute left-0 top-0 h-0.5 w-5 rounded bg-current transition-transform",
+                  menuOpen && "translate-y-1.5 rotate-45"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute left-0 top-1.5 h-0.5 w-5 rounded bg-current transition-opacity",
+                  menuOpen && "opacity-0"
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute left-0 top-3 h-0.5 w-5 rounded bg-current transition-transform",
+                  menuOpen && "-translate-y-1.5 -rotate-45"
+                )}
+              />
+            </span>
+          </button>
         </nav>
       </div>
+
+      {/* Mobile menu panel (anchored to the fixed header, solid background). */}
+      {menuOpen && (
+        <div className="border-t border-border/60 bg-bg sm:hidden">
+          <nav className="container-page flex flex-col gap-1 py-3">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "rounded-lg px-3 py-2.5 text-base font-medium transition-colors",
+                  isActive(l.href)
+                    ? "bg-accent/10 text-accent"
+                    : "text-white hover:bg-bg-elevated/60"
+                )}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <div className="my-2 border-t border-border/60" />
+            <TutorialButton
+              label="Tutorial"
+              className="rounded-lg px-3 py-2.5 text-left text-base font-medium text-muted transition-colors hover:text-white"
+            />
+            <a
+              href={DONATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg px-3 py-2.5 text-base font-medium text-muted transition-colors hover:text-white"
+            >
+              Support RouteForge
+            </a>
+            {user ? (
+              <>
+                <Link
+                  href="/settings"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-base font-medium text-muted hover:text-white"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={logout}
+                  className="rounded-lg px-3 py-2.5 text-left text-base font-medium text-muted transition-colors hover:text-white"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <div className="mt-1 flex gap-2 px-3 pb-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 rounded-lg border border-border px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:border-accent"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-center text-sm font-semibold text-bg transition hover:bg-accent/90"
+                >
+                  Get started
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

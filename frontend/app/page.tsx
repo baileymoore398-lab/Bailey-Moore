@@ -13,7 +13,7 @@ const features = [
   {
     title: "GPS Analysis",
     icon: "📈",
-    body: "Upload GPX, FIT, or TCX. We compute splits, speed, climb, pace and detect navigation mistakes leg by leg.",
+    body: "Upload GPX, FIT, TCX, KML and more. We compute splits, speed, climb, pace and detect navigation mistakes leg by leg.",
   },
   {
     title: "AI Coach",
@@ -21,9 +21,27 @@ const features = [
     body: "Get a personalized report: strengths, weaknesses, and concrete drills to fix the errors that actually cost you time.",
   },
   {
-    title: "Video Export",
+    title: "Share Studio",
     icon: "🎬",
-    body: "Render a cinematic replay of your run with a moving dot, speed heat, and mistake call-outs — ready to share.",
+    body: "Turn your race into a branded photo or an animated replay video with speed colours — ready for Instagram, TikTok or your club chat.",
+  },
+];
+
+const steps = [
+  {
+    n: "1",
+    title: "Upload your race",
+    body: "GPS track from your watch, a photo of the map, and your splits (paste them straight from WinSplits).",
+  },
+  {
+    n: "2",
+    title: "We analyze everything",
+    body: "Leg-by-leg times, route efficiency, mistake detection and performance scores — computed in seconds.",
+  },
+  {
+    n: "3",
+    title: "Replay, learn, improve",
+    body: "Watch your speed-coloured replay, read your AI coach report, and get drills that target your weakest skills.",
   },
 ];
 
@@ -36,11 +54,95 @@ const fadeUp = {
   }),
 };
 
+/** Product-style preview card: a speed-coloured route with controls + stats. */
+function HeroPreview() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-bg-card/60 p-1 shadow-2xl shadow-accent/5">
+      <div className="rounded-xl bg-bg-soft/60 p-4 sm:p-6">
+        <div className="flex items-center justify-between px-1 pb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+            Race replay
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+            Live analysis
+          </span>
+        </div>
+
+        {/* Route mock — speed-coloured track with controls, start, finish. */}
+        <svg
+          viewBox="0 0 640 240"
+          role="img"
+          aria-label="Example analyzed route with speed colours and controls"
+          className="h-auto w-full rounded-lg border border-border/60 bg-[#11140d]"
+        >
+          <defs>
+            <linearGradient id="spd" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#3b82f6" />
+              <stop offset="0.5" stopColor="#2ecf6e" />
+              <stop offset="1" stopColor="#d9f56b" />
+            </linearGradient>
+          </defs>
+          {/* contour hints */}
+          <path d="M-10 60 Q160 20 330 65 T650 55" fill="none" stroke="#2c3322" strokeWidth="1.5" />
+          <path d="M-10 130 Q160 90 330 135 T650 125" fill="none" stroke="#2c3322" strokeWidth="1.5" />
+          <path d="M-10 200 Q160 160 330 205 T650 195" fill="none" stroke="#2c3322" strokeWidth="1.5" />
+          {/* route */}
+          <path
+            d="M60 190 L150 90 L260 130 L350 50 L450 110 L560 60"
+            fill="none"
+            stroke="url(#spd)"
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* controls */}
+          {[
+            [150, 90],
+            [260, 130],
+            [350, 50],
+            [450, 110],
+          ].map(([x, y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="11" fill="none" stroke="#f97316" strokeWidth="3" />
+              <text x={x} y={y - 17} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">
+                {i + 1}
+              </text>
+            </g>
+          ))}
+          {/* start triangle */}
+          <path d="M60 178 L70 196 L50 196 Z" fill="#34d977" />
+          {/* finish */}
+          <rect x="552" y="52" width="16" height="16" rx="3" fill="#fff" />
+          {/* moving dot */}
+          <circle cx="350" cy="50" r="7" fill="#2ecf6e">
+            <animate attributeName="opacity" values="1;0.5;1" dur="1.6s" repeatCount="indefinite" />
+          </circle>
+        </svg>
+
+        <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
+          {[
+            ["2.44 km", "Distance"],
+            ["15:14", "Time"],
+            ["88 m", "Climb"],
+            ["74", "Overall"],
+          ].map(([v, l], i) => (
+            <div key={l} className="rounded-xl bg-bg-card/70 px-4 py-4 text-center">
+              <div className={i === 3 ? "stat-value text-accent" : "stat-value"}>{v}</div>
+              <div className="stat-label mt-1">{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   return (
     <div className="container-page">
       {/* Hero */}
-      <section className="relative grid place-items-center py-24 text-center sm:py-32">
+      <section className="relative grid place-items-center py-20 text-center sm:py-28">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -53,7 +155,7 @@ export default function LandingPage() {
           <h1 className="mt-6 text-balance text-5xl font-black leading-[1.05] tracking-tight sm:text-7xl">
             Forge a faster route.
             <br />
-            <span className="bg-gradient-to-r from-accent via-cyan-300 to-accent-lime bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent via-accent-lime to-accent bg-clip-text text-transparent">
               Learn from every race.
             </span>
           </h1>
@@ -79,25 +181,36 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-bg-card/60 p-1 shadow-2xl shadow-accent/5"
+          className="mt-16 w-full max-w-4xl"
         >
-          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
-            {[
-              ["2.44 km", "Distance"],
-              ["15:14", "Time"],
-              ["88 m", "Climb"],
-              ["74", "Overall"],
-            ].map(([v, l]) => (
-              <div
-                key={l}
-                className="rounded-xl bg-bg-soft/60 px-4 py-6 text-center"
-              >
-                <div className="stat-value">{v}</div>
-                <div className="stat-label mt-1">{l}</div>
-              </div>
-            ))}
-          </div>
+          <HeroPreview />
         </motion.div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-12">
+        <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
+          How it works
+        </h2>
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {steps.map((s, i) => (
+            <motion.div
+              key={s.n}
+              custom={i}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-60px" }}
+              className="relative rounded-2xl border border-border bg-bg-card/70 p-6"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-lg font-black text-bg">
+                {s.n}
+              </span>
+              <h3 className="mt-4 text-lg font-bold">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* Feature grid */}
@@ -130,7 +243,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5 }}
           className="relative overflow-hidden rounded-3xl border border-accent/30 bg-gradient-to-br from-bg-card to-bg-soft px-8 py-16 text-center"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_120%_at_50%_0%,rgba(34,211,238,0.18),transparent)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_120%_at_50%_0%,rgba(46,207,110,0.16),transparent)]" />
           <h2 className="relative text-3xl font-black sm:text-4xl">
             Ready to find your lost minutes?
           </h2>
@@ -145,10 +258,6 @@ export default function LandingPage() {
           </div>
         </motion.div>
       </section>
-
-      <footer className="border-t border-border/60 py-8 text-center text-sm text-muted">
-        RouteForge — AI race analysis for orienteers and trail runners.
-      </footer>
     </div>
   );
 }

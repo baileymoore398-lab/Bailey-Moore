@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     "route choice",
     "AI coach",
   ],
-  icons: { icon: "/icon.svg", apple: "/logo-mark.svg" },
+  icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
@@ -45,6 +45,10 @@ export const metadata: Metadata = {
     description,
     images: ["/og.png"],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0c0e0a",
 };
 
 export default function RootLayout({

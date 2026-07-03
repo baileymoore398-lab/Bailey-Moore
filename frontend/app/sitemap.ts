@@ -5,6 +5,7 @@ import { SITE_URL } from "@/lib/site";
 const ROUTES = [
   { path: "/", priority: 1.0 },
   { path: "/pricing", priority: 0.8 },
+  { path: "/faq", priority: 0.7 },
   { path: "/contact", priority: 0.6 },
   { path: "/login", priority: 0.5 },
   { path: "/register", priority: 0.6 },
