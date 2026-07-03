@@ -65,3 +65,22 @@ def decode_reset_token(token: str) -> Optional[str]:
     if not payload or payload.get("purpose") != "pwreset":
         return None
     return payload.get("sub")
+
+
+def create_state_token(user_id: str, purpose: str, minutes: int = 10) -> str:
+    """Short-lived token carrying a user through an OAuth redirect round-trip."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": user_id,
+        "purpose": purpose,
+        "iat": now,
+        "exp": now + timedelta(minutes=minutes),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_state_token(token: str, purpose: str) -> Optional[str]:
+    payload = decode_token(token)
+    if not payload or payload.get("purpose") != purpose:
+        return None
+    return payload.get("sub")

@@ -7,9 +7,17 @@ import { UploadZone, type UploadState } from "@/components/UploadZone";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { analyzeRace, createRace, pasteSplits, uploadFile } from "@/lib/api";
+import {
+  analyzeRace,
+  createRace,
+  importStravaActivity,
+  pasteSplits,
+  uploadFile,
+  type StravaActivity,
+} from "@/lib/api";
 import { downscaleImage } from "@/lib/image";
 import { TutorialButton } from "@/components/Tutorial";
+import { StravaImport } from "@/components/StravaImport";
 import type { UploadKind } from "@/lib/types";
 
 interface Slot {
@@ -37,6 +45,7 @@ export default function UploadPage() {
   const [generating, setGenerating] = React.useState(false);
   const [genError, setGenError] = React.useState<string | null>(null);
   const [splitsPaste, setSplitsPaste] = React.useState("");
+  const [stravaActivity, setStravaActivity] = React.useState<StravaActivity | null>(null);
 
   const setSlot = (kind: UploadKind, patch: Partial<Slot>) =>
     setSlots((s) => ({ ...s, [kind]: { ...s[kind], ...patch } }));
@@ -44,14 +53,31 @@ export default function UploadPage() {
   const onFile = (kind: UploadKind, file: File | null) =>
     setSlot(kind, { file, state: file ? "ready" : "idle", error: null });
 
-  // A GPS track is the only hard requirement; map + splits are optional.
-  const canGenerate = slots.gps.file && !generating;
+  // A GPS source is the only hard requirement (file upload OR a Strava
+  // activity); map + splits are optional.
+  const hasGpsSource = Boolean(slots.gps.file || stravaActivity);
+  const canGenerate = hasGpsSource && !generating;
 
   async function handleGenerate() {
     setGenerating(true);
     setGenError(null);
     try {
-      const race = await createRace(raceName || undefined);
+      // Fall back to the Strava activity name so imported races are labelled.
+      const race = await createRace(
+        raceName || stravaActivity?.name || undefined
+      );
+
+      // GPS from Strava (when no file was uploaded).
+      if (!slots.gps.file && stravaActivity) {
+        setSlot("gps", { state: "uploading" });
+        try {
+          await importStravaActivity(race.id, stravaActivity.id);
+          setSlot("gps", { state: "done" });
+        } catch (e) {
+          setSlot("gps", { state: "error", error: (e as Error).message });
+          throw e;
+        }
+      }
 
       for (const kind of ["map", "gps", "splits"] as UploadKind[]) {
         const slot = slots[kind];
@@ -187,6 +213,12 @@ export default function UploadPage() {
                 error={slots[steps[current].kind].error}
                 onFile={(f) => onFile(steps[current].kind, f)}
               />
+              {steps[current].kind === "gps" && (
+                <StravaImport
+                  selected={stravaActivity}
+                  onSelect={setStravaActivity}
+                />
+              )}
               {steps[current].kind === "splits" && (
                 <>
                   <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">
@@ -231,7 +263,11 @@ export default function UploadPage() {
                 <Button
                   variant="accent"
                   onClick={() => setCurrent((c) => c + 1)}
-                  disabled={steps[current].required && !slots[steps[current].kind].file}
+                  disabled={
+                    steps[current].required &&
+                    !slots[steps[current].kind].file &&
+                    !(steps[current].kind === "gps" && stravaActivity)
+                  }
                 >
                   {steps[current].required ? "Continue" : "Skip / Continue"}
                 </Button>
@@ -272,7 +308,11 @@ export default function UploadPage() {
                               ? "Failed"
                               : slot.file
                                 ? slot.file.name
-                                : "Not provided"}
+                                : s.kind === "gps" && stravaActivity
+                                  ? `Strava: ${stravaActivity.name || "activity"}`
+                                  : s.kind === "splits" && splitsPaste.trim()
+                                    ? "Pasted splits ✓"
+                                    : "Not provided"}
                       </span>
                     </div>
                   );

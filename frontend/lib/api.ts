@@ -170,6 +170,47 @@ export async function analyzeRace(raceId: string): Promise<AnalyzeResult> {
   return request<AnalyzeResult>(`/races/${raceId}/analyze`, { method: "POST" });
 }
 
+/* ----------------------------- Strava ----------------------------- */
+
+export interface StravaStatus {
+  configured: boolean;
+  connected: boolean;
+  athlete_name: string | null;
+}
+
+export interface StravaActivity {
+  id: number;
+  name: string;
+  sport_type: string | null;
+  start_date: string | null;
+  distance_m: number | null;
+  moving_time_s: number | null;
+  has_gps: boolean;
+}
+
+export async function getStravaStatus(): Promise<StravaStatus> {
+  return request<StravaStatus>("/integrations/strava/status");
+}
+
+export async function getStravaConnectUrl(): Promise<{ url: string }> {
+  return request<{ url: string }>("/integrations/strava/connect");
+}
+
+export async function listStravaActivities(): Promise<{ activities: StravaActivity[] }> {
+  return request<{ activities: StravaActivity[] }>("/integrations/strava/activities");
+}
+
+export async function importStravaActivity(
+  raceId: string,
+  activityId: number
+): Promise<{ point_count: number; race_id: string }> {
+  return request(`/integrations/strava/import`, {
+    method: "POST",
+    body: JSON.stringify({ race_id: raceId, activity_id: activityId }),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 // Submit split times pasted from a WinSplits table (or any delimited text).
 export async function pasteSplits(
   raceId: string,
