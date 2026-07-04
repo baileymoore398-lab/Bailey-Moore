@@ -24,11 +24,16 @@ logger = logging.getLogger("routeforge")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIMIT_DEFAULT])
 
+_docs_enabled = settings.ENV != "production"
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="0.1.0",
     description="AI-powered race analysis for orienteering, MTBO, rogaining, "
     "adventure racing and trail running.",
+    # Don't expose interactive API docs / schema publicly in production.
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
 app.state.limiter = limiter
 

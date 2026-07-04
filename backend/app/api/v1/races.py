@@ -38,6 +38,22 @@ def _get_race_or_404(race_id: str, db: Session) -> Race:
     return race
 
 
+def _authorize_race_write(race: Race, user: Optional[User]) -> None:
+    """Only the owner (or an admin) may modify an owned race.
+
+    Anonymous races (no owner — created in the signed-out demo flow) stay open
+    so that flow keeps working; reads are intentionally left public so shared
+    race links resolve.
+    """
+    if race.owner_id and (
+        user is None
+        or (user.id != race.owner_id and not user.is_superuser)
+    ):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "You don't have access to this race."
+        )
+
+
 async def _read_upload(file: UploadFile) -> bytes:
     data = await file.read()
     if len(data) > MAX_UPLOAD_BYTES:
@@ -105,6 +121,7 @@ async def upload_map(
     user: Optional[User] = Depends(get_optional_user),
 ):
     race = _get_race_or_404(race_id, db)
+    _authorize_race_write(race, user)
     data = await _read_upload(file)
     key = f"maps/{race.id}/{file.filename or 'map'}"
     get_storage().put(key, data, file.content_type)
@@ -127,6 +144,7 @@ async def upload_gps(
     user: Optional[User] = Depends(get_optional_user),
 ):
     race = _get_race_or_404(race_id, db)
+    _authorize_race_write(race, user)
     data = await _read_upload(file)
     try:
         points = parse_track(file.filename or "", data)
@@ -162,6 +180,7 @@ async def upload_splits(
     user: Optional[User] = Depends(get_optional_user),
 ):
     race = _get_race_or_404(race_id, db)
+    _authorize_race_write(race, user)
     data = await _read_upload(file)
     # Splits are optional and file formats vary wildly — a parse failure must
     # never 500. Treat any error as "couldn't read", and continue without splits.
@@ -220,6 +239,7 @@ def paste_splits(
     """Accept split times pasted from a WinSplits Online table (or any delimited
     text). Parses out the athlete's cumulative splits."""
     race = _get_race_or_404(race_id, db)
+    _authorize_race_write(race, user)
     text = body.text or ""
     parsed = {"controls": [], "competitors": []}
     try:
@@ -261,6 +281,7 @@ def analyze_race(
     user: Optional[User] = Depends(get_optional_user),
 ):
     race = _get_race_or_404(race_id, db)
+    _authorize_race_write(race, user)
     if not race.gps_track and not race.split_set:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,

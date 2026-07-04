@@ -23,6 +23,27 @@ if settings.ENV == "production" and settings.DATABASE_URL.startswith("sqlite"):
         "DATABASE_URL=${{Postgres.DATABASE_URL}} (match your Postgres service name)."
     )
 
+# Refuse to run in production with a weak/default JWT secret: the default is
+# public in this repo, so anyone could forge login tokens (including admin).
+_INSECURE_JWT_SECRETS = {
+    "dev-insecure-secret-change-me",
+    "change-me-dev-only-do-not-use-in-production",
+    "change-me",
+    "changeme",
+    "secret",
+    "",
+}
+if settings.ENV == "production" and (
+    settings.JWT_SECRET.strip() in _INSECURE_JWT_SECRETS
+    or len(settings.JWT_SECRET.strip()) < 24
+):
+    raise RuntimeError(
+        "JWT_SECRET is unset, default, or too short but ENV=production. Anyone "
+        "could forge authentication tokens. Set a strong random value on your "
+        "host, e.g. generate one with `openssl rand -hex 32` and add it as the "
+        "JWT_SECRET environment variable, then redeploy."
+    )
+
 _connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     # Needed for SQLite when used across threads (uvicorn workers).
