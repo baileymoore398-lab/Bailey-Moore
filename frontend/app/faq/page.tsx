@@ -31,7 +31,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Is RouteForge free?",
-    a: "Yes — the free plan includes several analyses per month with the full replay, scores and coaching report. Paid plans remove the monthly limit and add extras; see the pricing page for details.",
+    a: "Yes — while RouteForge is in beta, everything is completely free with no limits. Memberships will open later (the free tier will then include 5 analyses per month), and early users keep founding-member perks. See the Membership page for what's coming.",
   },
   {
     q: "Do I need an account?",

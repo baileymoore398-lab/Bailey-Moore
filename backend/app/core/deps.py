@@ -76,7 +76,13 @@ def _current_period() -> str:
 
 
 def enforce_analysis_quota(user: Optional[User], db: Session) -> None:
-    """Enforce the free-plan monthly analysis quota. No-op for anonymous/dev."""
+    """Enforce the free-plan monthly analysis quota.
+
+    While billing is not configured (no Stripe key — i.e. memberships haven't
+    opened), everything is free and unlimited: usage is still counted for
+    stats, but nothing is ever blocked. The limit activates automatically the
+    day Stripe is enabled. No-op for anonymous/dev.
+    """
     if user is None:
         return
     sub = (
@@ -90,7 +96,12 @@ def enforce_analysis_quota(user: Optional[User], db: Session) -> None:
     if sub.period_label != period:
         sub.period_label = period
         sub.analyses_used = 0
-    if sub.plan == Plan.free.value and sub.analyses_used >= settings.FREE_PLAN_MONTHLY_ANALYSES:
+    billing_live = bool(settings.STRIPE_SECRET_KEY)
+    if (
+        billing_live
+        and sub.plan == Plan.free.value
+        and sub.analyses_used >= settings.FREE_PLAN_MONTHLY_ANALYSES
+    ):
         raise HTTPException(
             status.HTTP_402_PAYMENT_REQUIRED,
             "Free plan monthly analysis limit reached. Upgrade to Pro for unlimited analyses.",
