@@ -4,7 +4,7 @@ import { Logo } from "@/components/Logo";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-border/60">
+    <footer className="relative mt-20 border-t border-border/60 before:pointer-events-none before:absolute before:inset-x-0 before:top-[-1px] before:h-px before:bg-gradient-to-r before:from-transparent before:via-accent/30 before:to-transparent">
       <div className="container-page flex flex-col items-center gap-3 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
         <Link href="/" aria-label="RouteForge home">
           <Logo size="sm" showTrademark />

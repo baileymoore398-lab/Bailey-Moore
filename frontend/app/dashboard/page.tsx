@@ -119,7 +119,11 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black tracking-tight">
-            Hi {greetingName} 👋
+            Hi{" "}
+            <span className="bg-gradient-to-r from-accent to-accent-lime bg-clip-text text-transparent">
+              {greetingName}
+            </span>{" "}
+            👋
           </h1>
           <p className="mt-1 text-muted">Here&apos;s your performance snapshot.</p>
         </div>

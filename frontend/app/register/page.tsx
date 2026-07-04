@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { register } from "@/lib/api";
 import { setSession } from "@/lib/auth";
+import { LogoMark } from "@/components/Logo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,9 +39,14 @@ export default function RegisterPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="relative w-full max-w-md"
       >
-        <Card className="p-8">
+        {/* Ambient brand glow behind the card. */}
+        <div className="pointer-events-none absolute -inset-x-20 -top-24 h-72 rounded-full bg-accent/10 blur-3xl" />
+        <div className="relative mb-6 flex justify-center">
+          <LogoMark className="h-12 w-12 drop-shadow-[0_0_24px_rgba(46,207,110,0.35)]" />
+        </div>
+        <Card className="relative p-8">
           <h1 className="text-2xl font-black tracking-tight">Create your account</h1>
           <p className="mt-1 text-sm text-muted">
             Start analyzing your races in seconds.

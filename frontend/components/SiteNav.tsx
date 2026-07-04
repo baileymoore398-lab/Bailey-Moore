@@ -68,8 +68,10 @@ export function SiteNav() {
               key={l.href}
               href={l.href}
               className={cn(
-                "hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:block",
-                isActive(l.href) ? "text-accent" : "text-muted hover:text-white"
+                "relative hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:block",
+                isActive(l.href)
+                  ? "text-accent after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent/70"
+                  : "text-muted hover:text-white"
               )}
             >
               {l.label}
