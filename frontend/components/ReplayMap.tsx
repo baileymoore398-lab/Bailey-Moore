@@ -74,6 +74,7 @@ export function ReplayMap({
   const mapRef = React.useRef<maplibregl.Map | null>(null);
   const markerRef = React.useRef<maplibregl.Marker | null>(null);
   const [ready, setReady] = React.useState(false);
+  const [failed, setFailed] = React.useState(false);
 
   const maxSpeed = React.useMemo(
     () => track.reduce((m, p) => Math.max(m, p.speed_kmh), 0) || 1,
@@ -89,16 +90,24 @@ export function ReplayMap({
     return b;
   }, [track, controls]);
 
-  // Init map once.
+  // Init map once. If WebGL is unavailable (old devices, strict browsers,
+  // headless), fail to a friendly panel instead of crashing the whole page.
   React.useEffect(() => {
     if (!containerRef.current || mapRef.current || track.length === 0) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      bounds: bounds.isEmpty() ? undefined : bounds,
-      fitBoundsOptions: { padding: 60 },
-      attributionControl: false,
-    });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: MAP_STYLE,
+        bounds: bounds.isEmpty() ? undefined : bounds,
+        fitBoundsOptions: { padding: 60 },
+        attributionControl: false,
+      });
+    } catch (err) {
+      console.warn("ReplayMap: map init failed (WebGL unavailable?)", err);
+      setFailed(true);
+      return;
+    }
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
@@ -260,6 +269,26 @@ export function ReplayMap({
       highlightLeg ?? -1,
     ]);
   }, [highlightLeg, ready]);
+
+  if (failed) {
+    return (
+      <div
+        className="grid h-full w-full place-items-center rounded-xl border border-border bg-bg-soft/60 p-6 text-center"
+        style={{ minHeight: 380 }}
+      >
+        <div>
+          <div className="text-3xl">🗺️</div>
+          <p className="mt-3 text-sm font-semibold text-white">
+            Interactive map unavailable
+          </p>
+          <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted">
+            This device/browser couldn&apos;t start WebGL, which the replay map
+            needs. Your analysis, scores and coach report below are unaffected.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

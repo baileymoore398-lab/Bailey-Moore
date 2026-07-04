@@ -40,6 +40,43 @@ const severityVariant = {
   low: "muted",
 } as const;
 
+/** Animated circular gauge for the overall score — the page's hero number. */
+function ScoreRing({ value }: { value: number }) {
+  const r = 30;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, value));
+  const color = pct >= 80 ? "#86d94f" : pct >= 65 ? "#2ecf6e" : "#c6692f";
+  return (
+    <div className="relative grid h-24 w-24 shrink-0 place-items-center">
+      <svg viewBox="0 0 72 72" className="h-full w-full -rotate-90">
+        <circle cx="36" cy="36" r={r} fill="none" stroke="#2c3322" strokeWidth="6" />
+        <motion.circle
+          cx="36"
+          cy="36"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - pct / 100) }}
+          transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
+          style={{ filter: `drop-shadow(0 0 6px ${color}66)` }}
+        />
+      </svg>
+      <div className="absolute text-center">
+        <div className="text-2xl font-black leading-none" style={{ color }}>
+          {Math.round(pct)}
+        </div>
+        <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted">
+          Overall
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AnalysisDashboard({
   analysis,
   demo,
@@ -70,12 +107,12 @@ export function AnalysisDashboard({
   const hasSplits = analysis.legs.some((l) => l.rank != null);
 
   const stats = [
-    { label: "Distance", value: formatDistance(m.distance_m) },
-    { label: "Time", value: formatDuration(m.duration_s) },
-    { label: "Avg pace", value: formatPace(m.avg_pace_min_km) },
-    { label: "Climb", value: `${Math.round(m.total_climb_m)} m` },
-    { label: "Controls", value: hasControls ? String(analysis.controls.length) : "–" },
-    { label: "Mistakes", value: String(analysis.mistakes.length) },
+    { label: "Distance", value: formatDistance(m.distance_m), icon: "📏" },
+    { label: "Time", value: formatDuration(m.duration_s), icon: "⏱️" },
+    { label: "Avg pace", value: formatPace(m.avg_pace_min_km), icon: "⚡" },
+    { label: "Climb", value: `${Math.round(m.total_climb_m)} m`, icon: "⛰️" },
+    { label: "Controls", value: hasControls ? String(analysis.controls.length) : "–", icon: "🎯" },
+    { label: "Mistakes", value: String(analysis.mistakes.length), icon: "⚠️" },
   ];
 
   return (
@@ -95,17 +132,10 @@ export function AnalysisDashboard({
             <span className="text-white">{analysis.status}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {demo && <Badge variant="warning">Demo data</Badge>}
           <ShareStudio analysis={analysis} />
-          <div className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-center">
-            <div className="text-2xl font-black text-accent">
-              {analysis.scores.overall}
-            </div>
-            <div className="text-[10px] uppercase tracking-wider text-accent/80">
-              Overall
-            </div>
-          </div>
+          <ScoreRing value={analysis.scores.overall} />
         </div>
       </div>
 
@@ -137,7 +167,13 @@ export function AnalysisDashboard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
           >
-            <Card className="p-4">
+            <Card className="relative overflow-hidden p-4">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-1 -top-1 text-2xl opacity-15"
+              >
+                {s.icon}
+              </span>
               <div className="stat-value">{s.value}</div>
               <div className="stat-label mt-1">{s.label}</div>
             </Card>
