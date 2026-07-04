@@ -436,7 +436,7 @@ export async function getPlans(): Promise<{ data: BillingPlans; demo: boolean }>
   return withFallback(() => request<BillingPlans>("/billing/plans"), {
     billing_enabled: false,
     plans: [
-      { id: "free", name: "Free", price_month: 0, features: ["3 analyses / month", "Interactive replay"] },
+      { id: "free", name: "Free", price_month: 0, features: ["5 analyses / month", "Interactive replay"] },
       { id: "pro", name: "Pro", price_month: 9, features: ["Unlimited analyses", "AI coach + video", "Heatmaps"] },
       { id: "team", name: "Team", price_month: 29, features: ["Coach dashboard", "Up to 15 athletes"] },
       { id: "club", name: "Club", price_month: 79, features: ["Club dashboard", "Event hosting"] },

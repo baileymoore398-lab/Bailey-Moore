@@ -24,7 +24,7 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 # Plan catalogue surfaced to the frontend pricing page.
 PLANS = [
     {"id": "free", "name": "Free", "price_month": 0,
-     "features": ["3 analyses / month", "Interactive replay", "Basic AI coach"]},
+     "features": ["5 analyses / month", "Interactive replay", "Basic AI coach"]},
     {"id": "pro", "name": "Pro", "price_month": 9,
      "features": ["Unlimited analyses", "AI coach + video export", "Heatmaps", "Public sharing"]},
     {"id": "team", "name": "Team", "price_month": 29,

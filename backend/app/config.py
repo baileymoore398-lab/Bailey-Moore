@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
 
     # --- Subscriptions / quotas ---
-    FREE_PLAN_MONTHLY_ANALYSES: int = 3
+    FREE_PLAN_MONTHLY_ANALYSES: int = 5
 
     # --- Admin ---
     # Comma-separated emails granted admin/superuser access on sign-in — used to
