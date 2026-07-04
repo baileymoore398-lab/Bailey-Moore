@@ -200,6 +200,10 @@ export async function listStravaActivities(): Promise<{ activities: StravaActivi
   return request<{ activities: StravaActivity[] }>("/integrations/strava/activities");
 }
 
+export async function disconnectStrava(): Promise<{ disconnected: boolean }> {
+  return request(`/integrations/strava`, { method: "DELETE" });
+}
+
 export async function importStravaActivity(
   raceId: string,
   activityId: number

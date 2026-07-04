@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  disconnectStrava,
   getStravaConnectUrl,
   getStravaStatus,
   listStravaActivities,
@@ -9,7 +10,45 @@ import {
   type StravaStatus,
 } from "@/lib/api";
 import { isAuthenticated } from "@/lib/auth";
-import { formatDistance, formatDuration } from "@/lib/utils";
+import { cn, formatDistance, formatDuration } from "@/lib/utils";
+
+/** The Strava chevron mark (official glyph geometry). */
+function StravaMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
+      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+    </svg>
+  );
+}
+
+const SPORT_ICONS: Record<string, string> = {
+  Run: "🏃",
+  TrailRun: "🏃",
+  Ride: "🚴",
+  MountainBikeRide: "🚵",
+  GravelRide: "🚴",
+  Hike: "🥾",
+  Walk: "🚶",
+  NordicSki: "⛷️",
+  BackcountrySki: "⛷️",
+  Kayaking: "🛶",
+  Swim: "🏊",
+};
+
+function sportIcon(sport: string | null): string {
+  return (sport && SPORT_ICONS[sport]) || "📍";
+}
+
+function formatDay(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
 
 /**
  * "Import from Strava" panel for the GPS step: connect once, then pick a
@@ -56,8 +95,8 @@ export function StravaImport({
   }, []);
 
   React.useEffect(() => {
-    if (status?.connected && activities === null) void loadActivities();
-  }, [status, activities, loadActivities]);
+    if (status?.connected && activities === null && !loading) void loadActivities();
+  }, [status, activities, loading, loadActivities]);
 
   async function connect() {
     setError(null);
@@ -66,6 +105,17 @@ export function StravaImport({
       window.location.href = url;
     } catch (e) {
       setError((e as Error).message || "Couldn't start Strava connect");
+    }
+  }
+
+  async function disconnect() {
+    try {
+      await disconnectStrava();
+      setStatus((s) => (s ? { ...s, connected: false, athlete_name: null } : s));
+      setActivities(null);
+      onSelect(null);
+    } catch {
+      /* non-fatal */
     }
   }
 
@@ -78,108 +128,184 @@ export function StravaImport({
   }
 
   return (
-    <div className="mt-5 rounded-xl border border-border bg-bg-soft/40 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-white">
-          …or import from Strava
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-          Powered by Strava
-        </span>
-      </div>
+    <div className="relative mt-5 overflow-hidden rounded-2xl border border-border bg-bg-soft/50">
+      {/* Subtle Strava-orange glow along the top edge. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(252,76,2,0.10),transparent)]" />
 
-      {justConnected === "fail" && (
-        <p className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-          Strava connection failed — please try again.
-        </p>
-      )}
-
-      {!status.connected ? (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={connect}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#FC4C02] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#e34402]"
-          >
-            Connect with Strava
-          </button>
-          <p className="mt-2 text-xs text-muted">
-            One-time connection — then pick any activity to analyze, no file
-            exporting.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-3">
-          <div className="flex items-center justify-between gap-2 text-xs text-muted">
-            <span>
-              Connected{status.athlete_name ? ` as ${status.athlete_name}` : ""}
-              {justConnected === "ok" ? " ✓" : ""}
+      <div className="relative p-4 sm:p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#FC4C02] text-white">
+              <StravaMark className="h-[18px] w-[18px]" />
             </span>
+            <div>
+              <div className="text-sm font-bold text-white">
+                Import from Strava
+              </div>
+              <div className="text-[11px] text-muted">
+                {status.connected
+                  ? `Connected${status.athlete_name ? ` as ${status.athlete_name}` : ""}`
+                  : "Skip the file export — pull activities straight in"}
+              </div>
+            </div>
+          </div>
+          {status.connected ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              Connected
+            </span>
+          ) : (
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              Powered by Strava
+            </span>
+          )}
+        </div>
+
+        {justConnected === "fail" && (
+          <p className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            Strava connection failed — please try again.
+          </p>
+        )}
+
+        {/* Disconnected → official-style connect button */}
+        {!status.connected && (
+          <div className="mt-4">
             <button
               type="button"
-              onClick={() => void loadActivities()}
-              className="font-medium text-accent hover:underline"
+              onClick={connect}
+              className="group inline-flex items-center gap-2.5 rounded-xl bg-[#FC4C02] px-5 py-3 text-sm font-bold text-white shadow-[0_0_24px_-8px_rgba(252,76,2,0.8)] transition hover:bg-[#e34402] hover:shadow-[0_0_28px_-6px_rgba(252,76,2,0.9)]"
             >
-              Refresh
+              <StravaMark className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+              Connect with Strava
             </button>
+            <p className="mt-2.5 text-xs leading-relaxed text-muted">
+              One-time, read-only connection. Nothing is ever posted to your
+              Strava.
+            </p>
+            {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
           </div>
+        )}
 
-          {loading && <p className="mt-3 text-sm text-muted">Loading activities…</p>}
-          {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+        {/* Connected → activity picker */}
+        {status.connected && (
+          <div className="mt-4">
+            {loading && (
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-[62px] animate-pulse rounded-xl bg-bg-elevated/70"
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  />
+                ))}
+              </div>
+            )}
 
-          {activities && activities.length === 0 && (
-            <p className="mt-3 text-sm text-muted">No recent activities found.</p>
-          )}
+            {error && !loading && (
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                {error}{" "}
+                <button
+                  type="button"
+                  onClick={() => void loadActivities()}
+                  className="font-semibold underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
-          {activities && activities.length > 0 && (
-            <ul className="mt-3 max-h-64 space-y-1.5 overflow-y-auto pr-1">
-              {activities.map((a) => {
-                const active = selected?.id === a.id;
-                const disabled = !a.has_gps;
-                return (
-                  <li key={a.id}>
-                    <button
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => onSelect(active ? null : a)}
-                      className={
-                        "w-full rounded-lg border px-3 py-2.5 text-left text-sm transition " +
-                        (active
-                          ? "border-accent bg-accent/10"
-                          : disabled
-                            ? "cursor-not-allowed border-border/50 opacity-50"
-                            : "border-border hover:border-accent/50")
-                      }
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="truncate font-medium text-white">
-                          {active ? "✓ " : ""}
-                          {a.name || "Untitled activity"}
+            {activities && activities.length === 0 && !loading && (
+              <p className="rounded-lg border border-border bg-bg/40 px-3 py-4 text-center text-sm text-muted">
+                No recent activities found — record one and refresh.
+              </p>
+            )}
+
+            {activities && activities.length > 0 && !loading && (
+              <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                {activities.map((a) => {
+                  const active = selected?.id === a.id;
+                  const disabled = !a.has_gps;
+                  return (
+                    <li key={a.id}>
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onSelect(active ? null : a)}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all",
+                          active
+                            ? "border-accent bg-accent/10 shadow-[0_0_20px_-8px_rgba(46,207,110,0.7)]"
+                            : disabled
+                              ? "cursor-not-allowed border-border/40 opacity-45"
+                              : "border-border bg-bg/30 hover:border-accent/50 hover:bg-bg-elevated/40"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg",
+                            active ? "bg-accent/20" : "bg-bg-elevated/80"
+                          )}
+                        >
+                          {sportIcon(a.sport_type)}
                         </span>
-                        <span className="shrink-0 text-xs text-muted">
-                          {a.sport_type ?? ""}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-white">
+                            {a.name || "Untitled activity"}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-muted">
+                            {formatDay(a.start_date)}
+                            {a.distance_m
+                              ? ` · ${formatDistance(a.distance_m)}`
+                              : ""}
+                            {a.moving_time_s
+                              ? ` · ${formatDuration(a.moving_time_s)}`
+                              : ""}
+                            {disabled ? " · no GPS" : ""}
+                          </span>
                         </span>
-                      </span>
-                      <span className="mt-0.5 block text-xs text-muted">
-                        {a.start_date
-                          ? new Date(a.start_date).toLocaleDateString(undefined, {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : ""}
-                        {a.distance_m ? ` · ${formatDistance(a.distance_m)}` : ""}
-                        {a.moving_time_s ? ` · ${formatDuration(a.moving_time_s)}` : ""}
-                        {!a.has_gps ? " · no GPS" : ""}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      )}
+                        <span
+                          className={cn(
+                            "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-black transition",
+                            active
+                              ? "border-accent bg-accent text-bg"
+                              : "border-border text-transparent"
+                          )}
+                        >
+                          ✓
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {/* Footer actions */}
+            <div className="mt-3 flex items-center justify-between text-[11px] text-muted">
+              <span className="font-semibold uppercase tracking-wider">
+                Powered by Strava
+              </span>
+              <span className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => void loadActivities()}
+                  className="font-medium text-accent hover:underline"
+                >
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void disconnect()}
+                  className="font-medium hover:text-white hover:underline"
+                >
+                  Disconnect
+                </button>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
