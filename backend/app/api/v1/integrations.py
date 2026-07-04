@@ -16,7 +16,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, get_optional_user
 from app.core.security import create_state_token, decode_state_token
 from app.database import get_db
 from app.models import GpsTrack, IntegrationToken, Race, RaceStatus, User
@@ -74,13 +74,17 @@ def _fresh_access_token(db: Session, user: User) -> Optional[str]:
 
 @router.get("/strava/status")
 def strava_status(
-    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
 ):
-    row = _token_row(db, user.id)
+    """Connection status. Works signed-out too, so the UI can explain that
+    signing in unlocks the Strava import instead of hiding it."""
+    row = _token_row(db, user.id) if user else None
     return {
         "configured": _configured(),
         "connected": row is not None,
         "athlete_name": row.external_name if row else None,
+        "signed_in": user is not None,
     }
 
 

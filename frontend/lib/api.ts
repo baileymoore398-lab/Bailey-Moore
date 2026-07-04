@@ -176,6 +176,7 @@ export interface StravaStatus {
   configured: boolean;
   connected: boolean;
   athlete_name: string | null;
+  signed_in?: boolean;
 }
 
 export interface StravaActivity {

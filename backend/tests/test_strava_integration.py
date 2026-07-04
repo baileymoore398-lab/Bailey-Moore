@@ -121,3 +121,11 @@ def test_callback_bad_state_redirects_error(app_client):
     )
     assert r.status_code in (302, 307)
     assert "strava=error" in r.headers["location"]
+
+
+def test_status_works_signed_out(app_client):
+    r = app_client.get("/api/v1/integrations/strava/status")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["connected"] is False
+    assert body["signed_in"] is False

@@ -75,7 +75,7 @@ export function StravaImport({
     if (q === "connected") setJustConnected("ok");
     if (q === "error") setJustConnected("fail");
 
-    if (!isAuthenticated()) return;
+    // Status works signed-out too (so we can prompt sign-in when configured).
     getStravaStatus()
       .then(setStatus)
       .catch(() => setStatus(null)); // backend unreachable → hide panel
@@ -119,12 +119,48 @@ export function StravaImport({
     }
   }
 
-  // Nothing to offer: signed out, or Strava keys not configured on the backend.
-  if (!authed || (status && !status.configured)) return null;
+  // Hide only when the backend says Strava isn't configured (or is unreachable).
+  if (status && !status.configured) return null;
   if (!status) {
     return justConnected ? (
       <p className="mt-4 text-xs text-muted">Checking Strava connection…</p>
     ) : null;
+  }
+
+  // Signed out: keep the panel visible and explain how to unlock it.
+  if (!authed) {
+    return (
+      <div className="relative mt-5 overflow-hidden rounded-2xl border border-border bg-bg-soft/50">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(252,76,2,0.10),transparent)]" />
+        <div className="relative flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#FC4C02] text-white">
+              <StravaMark className="h-[18px] w-[18px]" />
+            </span>
+            <div>
+              <div className="text-sm font-bold text-white">Import from Strava</div>
+              <div className="text-[11px] text-muted">
+                Sign in to connect your Strava and skip the file export
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href="/login"
+              className="rounded-lg border border-border px-3.5 py-2 text-xs font-semibold text-white transition hover:border-accent"
+            >
+              Sign in
+            </a>
+            <a
+              href="/register"
+              className="rounded-lg bg-accent px-3.5 py-2 text-xs font-semibold text-bg transition hover:bg-accent/90"
+            >
+              Create account
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
