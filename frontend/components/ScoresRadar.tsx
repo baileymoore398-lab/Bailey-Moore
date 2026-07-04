@@ -19,17 +19,17 @@ export function ScoresRadar({ scores }: { scores: Scores }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <RadarChart data={data} outerRadius="72%">
-        <PolarGrid stroke="#222c3a" />
+        <PolarGrid stroke="#2c3322" />
         <PolarAngleAxis
           dataKey="axis"
-          tick={{ fill: "#8a99ad", fontSize: 11 }}
+          tick={{ fill: "#9aa089", fontSize: 11 }}
         />
         <Radar
           dataKey="value"
-          stroke="#22d3ee"
-          fill="#22d3ee"
+          stroke="#2ecf6e"
+          fill="#2ecf6e"
           fillOpacity={0.35}
-          dot={{ r: 3, fill: "#22d3ee" }}
+          dot={{ r: 3, fill: "#2ecf6e" }}
         />
       </RadarChart>
     </ResponsiveContainer>

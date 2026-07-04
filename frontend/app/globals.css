@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: dark;
+  /* Native checkboxes, radios and progress pick up the brand green. */
+  accent-color: #2ecf6e;
 }
 
 @layer base {
@@ -132,7 +134,7 @@ main {
 .maplibregl-ctrl-attrib,
 .maplibregl-ctrl-attrib a {
   background: rgba(10, 14, 20, 0.6) !important;
-  color: #8a99ad !important;
+  color: #9aa089 !important;
   font-size: 10px;
 }
 .maplibregl-canvas {

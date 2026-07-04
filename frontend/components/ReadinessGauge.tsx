@@ -12,7 +12,7 @@ export function ReadinessGauge({ value }: { value: number }) {
   const offset = circumference * (1 - v / 100);
 
   const color =
-    v >= 75 ? "#a3e635" : v >= 50 ? "#22d3ee" : v >= 30 ? "#f97316" : "#ef4444";
+    v >= 75 ? "#a3e635" : v >= 50 ? "#2ecf6e" : v >= 30 ? "#f97316" : "#ef4444";
   const label =
     v >= 75 ? "Race ready" : v >= 50 ? "Building" : v >= 30 ? "Caution" : "Rest";
 
@@ -23,7 +23,7 @@ export function ReadinessGauge({ value }: { value: number }) {
           <path
             d="M 20 110 A 80 80 0 0 1 180 110"
             fill="none"
-            stroke="#222c3a"
+            stroke="#2c3322"
             strokeWidth={14}
             strokeLinecap="round"
           />

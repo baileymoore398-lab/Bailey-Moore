@@ -37,7 +37,7 @@ export function Slider({
       onChange={(e) => onValueChange(Number(e.target.value))}
       className={cn("rf-slider w-full cursor-pointer", className)}
       style={{
-        background: `linear-gradient(to right, #22d3ee ${pct}%, #1a2230 ${pct}%)`,
+        background: `linear-gradient(to right, #2ecf6e ${pct}%, #2c3322 ${pct}%)`,
       }}
       {...props}
     />

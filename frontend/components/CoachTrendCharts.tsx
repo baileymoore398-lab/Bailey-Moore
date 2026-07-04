@@ -12,8 +12,8 @@ import {
 import type { CoachTrendPoint } from "@/lib/types";
 
 const tooltipStyle = {
-  background: "#131a24",
-  border: "1px solid #222c3a",
+  background: "#171b12",
+  border: "1px solid #2c3322",
   borderRadius: 8,
   fontSize: 12,
   color: "#fff",
@@ -22,7 +22,7 @@ const tooltipStyle = {
 const xAxis = (
   <XAxis
     dataKey="race"
-    tick={{ fill: "#8a99ad", fontSize: 10 }}
+    tick={{ fill: "#9aa089", fontSize: 10 }}
     interval={0}
     angle={-12}
     textAnchor="end"
@@ -61,14 +61,14 @@ export function CoachTrendCharts({ series }: { series: CoachTrendPoint[] }) {
     <div className="grid gap-4 lg:grid-cols-3">
       <Chart title="Navigation">
         <LineChart data={series} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#222c3a" strokeDasharray="3 3" />
+          <CartesianGrid stroke="#2c3322" strokeDasharray="3 3" />
           {xAxis}
-          <YAxis tick={{ fill: "#8a99ad", fontSize: 11 }} />
+          <YAxis tick={{ fill: "#9aa089", fontSize: 11 }} />
           <Tooltip contentStyle={tooltipStyle} />
           <Line
             type="monotone"
             dataKey="navigation"
-            stroke="#22d3ee"
+            stroke="#2ecf6e"
             strokeWidth={2.5}
             dot={{ r: 3 }}
             name="Navigation"
@@ -79,9 +79,9 @@ export function CoachTrendCharts({ series }: { series: CoachTrendPoint[] }) {
 
       <Chart title="Route efficiency %">
         <LineChart data={series} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#222c3a" strokeDasharray="3 3" />
+          <CartesianGrid stroke="#2c3322" strokeDasharray="3 3" />
           {xAxis}
-          <YAxis tick={{ fill: "#8a99ad", fontSize: 11 }} />
+          <YAxis tick={{ fill: "#9aa089", fontSize: 11 }} />
           <Tooltip contentStyle={tooltipStyle} />
           <Line
             type="monotone"
@@ -97,9 +97,9 @@ export function CoachTrendCharts({ series }: { series: CoachTrendPoint[] }) {
 
       <Chart title="Time loss (s)">
         <LineChart data={series} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#222c3a" strokeDasharray="3 3" />
+          <CartesianGrid stroke="#2c3322" strokeDasharray="3 3" />
           {xAxis}
-          <YAxis tick={{ fill: "#8a99ad", fontSize: 11 }} />
+          <YAxis tick={{ fill: "#9aa089", fontSize: 11 }} />
           <Tooltip contentStyle={tooltipStyle} />
           <Line
             type="monotone"

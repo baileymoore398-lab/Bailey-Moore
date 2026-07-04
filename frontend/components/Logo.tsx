@@ -20,8 +20,13 @@ export function Logo({
 }) {
   const s = sizes[size];
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <LogoMark className={s.box} />
+    <span className={cn("group inline-flex items-center gap-2", className)}>
+      <LogoMark
+        className={cn(
+          s.box,
+          "transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
+        )}
+      />
       {showText && (
         <span className={cn("font-bold tracking-tight", s.text)}>
           Route<span className="text-accent">Forge</span>

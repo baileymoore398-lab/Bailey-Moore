@@ -55,7 +55,7 @@ export default async function AthleteProfilePage() {
           <CardContent>
             <ScoreTrend trend={athlete.trend} />
             <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
-              <Legend color="#22d3ee" label="Overall" />
+              <Legend color="#2ecf6e" label="Overall" />
               <Legend color="#f97316" label="Navigation" />
               <Legend color="#a3e635" label="Fitness" />
             </div>

@@ -20,7 +20,7 @@ export function zoneColor(zone: string, acwr: number): {
     return { text: "text-emerald-300", bar: "bg-emerald-400", label: "Optimal" };
   }
   if (z === "detraining" || acwr < 0.8) {
-    return { text: "text-cyan-300", bar: "bg-cyan-400", label: "Undertraining" };
+    return { text: "text-blue-300", bar: "bg-blue-400", label: "Undertraining" };
   }
   return { text: "text-amber-300", bar: "bg-amber-400", label: "High risk" };
 }
