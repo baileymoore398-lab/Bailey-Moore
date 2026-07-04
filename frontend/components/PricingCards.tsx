@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,14 +11,20 @@ import { cn } from "@/lib/utils";
 
 const highlight: Record<string, boolean> = { pro: true };
 
+/**
+ * Membership tiers. Two modes, driven by the backend's billing_enabled flag:
+ *   - Preview (no Stripe configured): memberships shown as "coming soon",
+ *     everything free while the platform is new.
+ *   - Live (Stripe configured): real checkout on the upgrade buttons.
+ * Flipping on billing requires no frontend change.
+ */
 export function PricingCards({ plans }: { plans: BillingPlans }) {
   const [busy, setBusy] = React.useState<string | null>(null);
-  const [notice, setNotice] = React.useState<string | null>(
-    plans.billing_enabled ? null : "Billing not yet enabled — checkout is in demo mode."
-  );
+  const [notice, setNotice] = React.useState<string | null>(null);
+  const live = plans.billing_enabled;
 
   async function upgrade(planId: string) {
-    if (planId === "free") return;
+    if (planId === "free" || !live) return;
     setBusy(planId);
     setNotice(null);
     try {
@@ -31,12 +38,12 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
       if (res?.checkout_url) {
         window.location.href = res.checkout_url;
       } else {
-        setNotice("Billing not yet enabled.");
+        setNotice("Checkout isn't available right now — please try again soon.");
       }
     } catch (err) {
       const e = err as { status?: number; message?: string };
       if (e.status === 503) {
-        setNotice("Billing not yet enabled. Please check back soon.");
+        setNotice("Memberships aren't open yet — please check back soon.");
       } else {
         setNotice(e.message || "Could not start checkout.");
       }
@@ -47,6 +54,15 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
 
   return (
     <div>
+      {!live && (
+        <div className="mb-8 rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4 text-center text-sm text-accent">
+          🌱 <strong>RouteForge is brand new — everything is free right now.</strong>
+          <span className="mt-1 block text-accent/80">
+            Memberships open once the platform matures. Early athletes keep
+            founding-member perks.
+          </span>
+        </div>
+      )}
       {notice && (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           {notice}
@@ -55,6 +71,7 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {plans.plans.map((plan, i) => {
           const featured = highlight[plan.id];
+          const isFree = plan.id === "free";
           return (
             <motion.div
               key={plan.id}
@@ -64,13 +81,16 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
               className={cn(
                 "relative flex flex-col rounded-2xl border bg-bg-card/70 p-6",
                 featured
-                  ? "border-accent/60 shadow-[0_0_40px_-12px_rgba(34,211,238,0.5)]"
-                  : "border-border"
+                  ? "border-accent/60 shadow-[0_0_40px_-12px_rgba(46,207,110,0.5)]"
+                  : "border-border",
+                !live && !isFree && "opacity-90"
               )}
             >
               {featured && (
                 <div className="absolute -top-3 left-6">
-                  <Badge variant="accent">Most popular</Badge>
+                  <Badge variant="accent">
+                    {live ? "Most popular" : "Coming soon"}
+                  </Badge>
                 </div>
               )}
               <h3 className="text-lg font-bold">{plan.name}</h3>
@@ -89,11 +109,11 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
                 ))}
               </ul>
               <div className="mt-6">
-                {plan.id === "free" ? (
+                {isFree ? (
                   <Button variant="outline" className="w-full" disabled>
-                    Current plan
+                    {live ? "Current plan" : "✓ Free while we're new"}
                   </Button>
-                ) : (
+                ) : live ? (
                   <Button
                     variant={featured ? "accent" : "default"}
                     className="w-full"
@@ -102,12 +122,26 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
                   >
                     {busy === plan.id ? "Redirecting…" : `Upgrade to ${plan.name}`}
                   </Button>
+                ) : (
+                  <Button variant="outline" className="w-full" disabled>
+                    🔒 Opening later
+                  </Button>
                 )}
               </div>
             </motion.div>
           );
         })}
       </div>
+
+      {!live && (
+        <p className="mt-8 text-center text-sm text-muted">
+          Want first access when memberships open?{" "}
+          <Link href="/contact" className="font-semibold text-accent hover:underline">
+            Get in touch
+          </Link>{" "}
+          — early supporters won&apos;t miss out.
+        </p>
+      )}
     </div>
   );
 }

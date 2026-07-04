@@ -23,11 +23,15 @@ export default function PricingPage() {
   return (
     <div className="container-page py-16">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
-          Pick your plan
+        <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+          Membership
+        </span>
+        <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
+          Become a RouteForge member
         </h1>
         <p className="mt-3 text-muted">
-          Start free. Upgrade when you&apos;re ready to forge faster routes.
+          Free while we&apos;re new. Memberships unlock later — here&apos;s
+          what&apos;s coming.
         </p>
         {demo && (
           <div className="mt-4 flex justify-center">
