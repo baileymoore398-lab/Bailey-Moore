@@ -25,6 +25,43 @@
   ::selection {
     @apply bg-accent/30 text-white;
   }
+
+  /* Themed scrollbars — thin, forest-dark, invisible track. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2c3322 transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2c3322;
+    border-radius: 8px;
+    border: 2px solid #0c0e0a;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3d4a2e;
+  }
+
+  /* Consistent accent focus for keyboard users on plain links/summaries. */
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid rgba(46, 207, 110, 0.7);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Soft accent halo when text fields take focus (on top of border-accent). */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: 0 0 0 3px rgba(46, 207, 110, 0.12);
+    transition: box-shadow 0.15s ease;
+  }
 }
 
 @layer components {
@@ -33,9 +70,33 @@
   }
   .stat-value {
     @apply text-2xl font-bold tabular-nums text-white;
+    text-shadow: 0 0 24px rgba(46, 207, 110, 0.12);
   }
   .stat-label {
     @apply text-xs uppercase tracking-wider text-muted;
+  }
+}
+
+/* Gentle content fade on full page load — makes every entry feel composed. */
+@keyframes rf-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+main {
+  animation: rf-page-in 0.35s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }
 

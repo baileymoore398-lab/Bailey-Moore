@@ -55,7 +55,7 @@ export function SiteNav() {
     pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-bg/70 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-bg/70 backdrop-blur-xl after:pointer-events-none after:absolute after:inset-x-0 after:bottom-[-1px] after:h-px after:bg-gradient-to-r after:from-transparent after:via-accent/40 after:to-transparent">
       <div className="container-page flex h-16 items-center justify-between">
         <Link href="/" aria-label="RouteForge home">
           <Logo size="md" />

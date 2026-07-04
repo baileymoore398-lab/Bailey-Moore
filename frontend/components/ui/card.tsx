@@ -8,7 +8,10 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-bg-card/80 backdrop-blur-sm shadow-lg shadow-black/20",
+        // Premium dark-card treatment: hairline top highlight + layered soft
+        // shadow give depth without changing layout.
+        "rounded-xl border border-border bg-bg-card/80 backdrop-blur-sm",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_-12px_rgba(0,0,0,0.6)]",
         className
       )}
       {...props}
