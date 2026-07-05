@@ -137,7 +137,7 @@ class Settings(BaseSettings):
     @property
     def email_from_addr(self) -> str:
         # Resend's shared sender works without domain verification for testing.
-        default = "onboarding@resend.dev" if self.RESEND_API_KEY else "no-reply@routeforge.app"
+        default = "onboarding@resend.dev" if self.RESEND_API_KEY else "no-reply@routeforge.world"
         return self.EMAIL_FROM or self.SMTP_USER or default
 
     @property

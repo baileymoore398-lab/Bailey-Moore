@@ -24,7 +24,7 @@ export const FORMSPREE_URL =
 // Graph). Set NEXT_PUBLIC_SITE_URL in Vercel to your real domain so social
 // previews and search engines point at the right place.
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://routeforge.vercel.app"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://routeforge.world"
 ).replace(/\/$/, "");
 
 // Display name used in legal copy.
