@@ -4,6 +4,7 @@ import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AppShell } from "@/components/AppShell";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="min-h-screen font-sans">
         <AppShell>{children}</AppShell>
+        <SpeedInsights />
       </body>
     </html>
   );
