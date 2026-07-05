@@ -73,8 +73,11 @@ def _get_or_create_sub(db: Session, user: User) -> Subscription:
 def list_plans():
     """Public pricing catalogue. billing_enabled is true if either Stripe or
     PayPal is configured; the frontend uses the paypal block to render buttons."""
+    # The master switch gates everything: keys can be configured but memberships
+    # stay "coming soon" until MEMBERSHIPS_ENABLED is turned on.
+    live = settings.memberships_live
     paypal = None
-    if settings.paypal_configured:
+    if live and settings.paypal_configured:
         paypal = {
             "client_id": settings.PAYPAL_CLIENT_ID,
             "env": settings.PAYPAL_ENV,
@@ -83,7 +86,7 @@ def list_plans():
         }
     return {
         "plans": PLANS,
-        "billing_enabled": bool(settings.STRIPE_SECRET_KEY) or settings.paypal_configured,
+        "billing_enabled": live,
         "paypal": paypal,
     }
 

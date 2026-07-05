@@ -132,6 +132,20 @@ class Settings(BaseSettings):
             "club": self.PAYPAL_PLAN_CLUB,
         }
 
+    # --- Memberships master switch ---
+    # Off by default: even with Stripe/PayPal keys configured, memberships stay
+    # in "coming soon" mode and everything is free & unlimited. Flip to true
+    # (MEMBERSHIPS_ENABLED=true on the API service) to show the buy buttons and
+    # start enforcing free-plan limits.
+    MEMBERSHIPS_ENABLED: bool = False
+
+    @property
+    def memberships_live(self) -> bool:
+        """True only when the switch is on AND a payment provider is configured."""
+        return self.MEMBERSHIPS_ENABLED and (
+            bool(self.STRIPE_SECRET_KEY) or self.paypal_configured
+        )
+
     # --- Email (transactional, SMTP) ---
     # Leave SMTP_HOST blank to disable real sending: emails are logged instead
     # and (outside production) the reset token is returned in the API response so

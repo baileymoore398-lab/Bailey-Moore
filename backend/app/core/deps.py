@@ -96,9 +96,8 @@ def enforce_analysis_quota(user: Optional[User], db: Session) -> None:
     if sub.period_label != period:
         sub.period_label = period
         sub.analyses_used = 0
-    billing_live = bool(settings.STRIPE_SECRET_KEY)
     if (
-        billing_live
+        settings.memberships_live
         and sub.plan == Plan.free.value
         and sub.analyses_used >= settings.FREE_PLAN_MONTHLY_ANALYSES
     ):

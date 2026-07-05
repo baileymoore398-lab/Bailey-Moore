@@ -78,3 +78,23 @@ def test_confirm_rejects_plan_mismatch(app_client):
             headers=h,
         )
     assert r.status_code == 400
+
+
+def test_master_switch_gates_buttons(app_client):
+    from app.config import settings
+    # Keys configured but switch OFF → still "coming soon" (no paypal block).
+    with patch.object(settings, "MEMBERSHIPS_ENABLED", False), \
+         patch.object(settings, "PAYPAL_CLIENT_ID", "cid"), \
+         patch.object(settings, "PAYPAL_SECRET", "secret"), \
+         patch.object(settings, "PAYPAL_PLAN_PRO", "P-PRO"):
+        b = app_client.get("/api/v1/billing/plans").json()
+        assert b["billing_enabled"] is False
+        assert b["paypal"] is None
+    # Same keys, switch ON → buttons available.
+    with patch.object(settings, "MEMBERSHIPS_ENABLED", True), \
+         patch.object(settings, "PAYPAL_CLIENT_ID", "cid"), \
+         patch.object(settings, "PAYPAL_SECRET", "secret"), \
+         patch.object(settings, "PAYPAL_PLAN_PRO", "P-PRO"):
+        b = app_client.get("/api/v1/billing/plans").json()
+        assert b["billing_enabled"] is True
+        assert b["paypal"]["plans"]["pro"] == "P-PRO"
