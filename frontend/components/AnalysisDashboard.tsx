@@ -12,6 +12,7 @@ import { ScoresRadar } from "@/components/ScoresRadar";
 import { ReplayControls } from "@/components/ReplayControls";
 import { ShareStudio } from "@/components/ShareStudio";
 import { CoachFeedback } from "@/components/CoachFeedback";
+import { CountUp } from "@/components/ui/count-up";
 import { DemoNotice } from "@/components/DemoNotice";
 import { downloadReport, downloadReportPdf } from "@/lib/report";
 import {
@@ -67,7 +68,7 @@ function ScoreRing({ value }: { value: number }) {
       </svg>
       <div className="absolute text-center">
         <div className="text-2xl font-black leading-none" style={{ color }}>
-          {Math.round(pct)}
+          <CountUp value={Math.round(pct)} duration={1.2} />
         </div>
         <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted">
           Overall

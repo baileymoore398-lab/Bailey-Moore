@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CountUp } from "@/components/ui/count-up";
 import { ReadinessGauge } from "@/components/ReadinessGauge";
 import { LoadIndicator } from "@/components/LoadIndicator";
 import { DemoNotice } from "@/components/DemoNotice";
@@ -105,10 +106,10 @@ export default function DashboardPage() {
 
   const s = athlete.stats;
   const stats = [
-    { label: "Races", value: String(s.races) },
-    { label: "Total distance", value: `${s.total_distance_km.toFixed(0)} km` },
-    { label: "Avg score", value: String(s.avg_overall_score) },
-    { label: "Best score", value: String(s.best_score) },
+    { label: "Races", value: s.races, suffix: "" },
+    { label: "Total distance", value: s.total_distance_km, suffix: " km" },
+    { label: "Avg score", value: s.avg_overall_score, suffix: "" },
+    { label: "Best score", value: s.best_score, suffix: "" },
   ];
 
   const readiness = training.race_readiness?.readiness ?? 0;
@@ -168,7 +169,9 @@ export default function DashboardPage() {
             animate="show"
           >
             <Card className="p-4">
-              <div className="stat-value">{st.value}</div>
+              <div className="stat-value">
+                <CountUp value={st.value} suffix={st.suffix} />
+              </div>
               <div className="stat-label mt-1">{st.label}</div>
             </Card>
           </motion.div>

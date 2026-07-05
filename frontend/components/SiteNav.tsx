@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { clearSession, getSessionUser, type SessionUser } from "@/lib/auth";
 import { DONATE_URL } from "@/lib/site";
@@ -160,8 +160,16 @@ export function SiteNav() {
       </div>
 
       {/* Mobile menu panel (anchored to the fixed header, solid background). */}
-      {menuOpen && (
-        <div className="border-t border-border/60 bg-bg sm:hidden">
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: "easeInOut" }}
+            className="overflow-hidden border-t border-border/60 bg-bg sm:hidden"
+          >
           <nav className="container-page flex flex-col gap-1 py-3">
             {links.map((l) => (
               <Link
@@ -226,8 +234,9 @@ export function SiteNav() {
               </div>
             )}
           </nav>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
