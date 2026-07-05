@@ -71,8 +71,74 @@ def _get_or_create_sub(db: Session, user: User) -> Subscription:
 
 @router.get("/plans")
 def list_plans():
-    """Public pricing catalogue."""
-    return {"plans": PLANS, "billing_enabled": bool(settings.STRIPE_SECRET_KEY)}
+    """Public pricing catalogue. billing_enabled is true if either Stripe or
+    PayPal is configured; the frontend uses the paypal block to render buttons."""
+    paypal = None
+    if settings.paypal_configured:
+        paypal = {
+            "client_id": settings.PAYPAL_CLIENT_ID,
+            "env": settings.PAYPAL_ENV,
+            # Only tiers with a Plan ID configured are purchasable.
+            "plans": {k: v for k, v in settings.paypal_plan_ids.items() if v},
+        }
+    return {
+        "plans": PLANS,
+        "billing_enabled": bool(settings.STRIPE_SECRET_KEY) or settings.paypal_configured,
+        "paypal": paypal,
+    }
+
+
+class PayPalConfirm(BaseModel):
+    subscription_id: str
+    plan: str  # pro | team | club
+
+
+@router.post("/paypal/confirm")
+def paypal_confirm(
+    body: PayPalConfirm,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Verify an approved PayPal subscription server-side, then upgrade the user.
+
+    The browser can't be trusted, so we look the subscription up via PayPal's
+    API, confirm it's ACTIVE/APPROVED, and confirm its plan_id matches the tier
+    we configured — preventing a tampered client from claiming a paid plan.
+    """
+    if not settings.paypal_configured:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "PayPal is not configured."
+        )
+    if body.plan not in {"pro", "team", "club"}:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown plan")
+
+    from app.services.billing import paypal
+
+    try:
+        details = paypal.get_subscription(body.subscription_id)
+    except Exception as exc:  # noqa: BLE001 — network / not found
+        logger.exception("PayPal subscription lookup failed")
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, f"Couldn't verify with PayPal: {exc}"
+        )
+
+    if details.get("status") not in ("ACTIVE", "APPROVED"):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Subscription is not active (status: {details.get('status')}).",
+        )
+    expected_plan_id = settings.paypal_plan_ids.get(body.plan)
+    if expected_plan_id and details.get("plan_id") != expected_plan_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Subscription plan does not match tier."
+        )
+
+    sub = _get_or_create_sub(db, user)
+    sub.plan = body.plan
+    sub.status = "active"
+    sub.paypal_subscription_id = body.subscription_id
+    db.commit()
+    return {"plan": sub.plan, "status": "active"}
 
 
 @router.get("/subscription")

@@ -90,6 +90,48 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None
 
+    # --- PayPal (alternative to Stripe for memberships) ---
+    # PAYPAL_ENV: "sandbox" while testing, "live" for real money. Create a
+    # monthly subscription Plan per tier in the PayPal dashboard and paste the
+    # Plan IDs. Memberships stay "coming soon" until CLIENT_ID + SECRET are set.
+    PAYPAL_ENV: str = "sandbox"
+    PAYPAL_CLIENT_ID: str | None = None
+    PAYPAL_SECRET: str | None = None
+    PAYPAL_PLAN_PRO: str | None = None
+    PAYPAL_PLAN_TEAM: str | None = None
+    PAYPAL_PLAN_CLUB: str | None = None
+
+    @field_validator(
+        "PAYPAL_CLIENT_ID", "PAYPAL_SECRET",
+        "PAYPAL_PLAN_PRO", "PAYPAL_PLAN_TEAM", "PAYPAL_PLAN_CLUB",
+        mode="before",
+    )
+    @classmethod
+    def _blank_paypal_to_none(cls, v):
+        if v is None or not str(v).strip():
+            return None
+        return str(v).strip()
+
+    @property
+    def paypal_configured(self) -> bool:
+        return bool(self.PAYPAL_CLIENT_ID and self.PAYPAL_SECRET)
+
+    @property
+    def paypal_api_base(self) -> str:
+        return (
+            "https://api-m.paypal.com"
+            if self.PAYPAL_ENV == "live"
+            else "https://api-m.sandbox.paypal.com"
+        )
+
+    @property
+    def paypal_plan_ids(self) -> dict:
+        return {
+            "pro": self.PAYPAL_PLAN_PRO,
+            "team": self.PAYPAL_PLAN_TEAM,
+            "club": self.PAYPAL_PLAN_CLUB,
+        }
+
     # --- Email (transactional, SMTP) ---
     # Leave SMTP_HOST blank to disable real sending: emails are logged instead
     # and (outside production) the reset token is returned in the API response so

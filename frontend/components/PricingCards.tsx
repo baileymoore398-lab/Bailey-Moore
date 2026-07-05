@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { startCheckout } from "@/lib/api";
+import { PayPalSubscribeButton } from "@/components/PayPalSubscribeButton";
 import type { BillingPlans } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const highlight: Record<string, boolean> = { pro: true };
 export function PricingCards({ plans }: { plans: BillingPlans }) {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
   const live = plans.billing_enabled;
 
   async function upgrade(planId: string) {
@@ -52,6 +54,25 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
     }
   }
 
+  if (success) {
+    return (
+      <div className="mx-auto max-w-lg rounded-2xl border border-accent/40 bg-accent/10 p-8 text-center">
+        <div className="text-4xl">🎉</div>
+        <h2 className="mt-3 text-2xl font-black">You&apos;re a {success} member!</h2>
+        <p className="mt-2 text-sm text-white/90">
+          Your subscription is active. Thanks for supporting RouteForge — head
+          to your dashboard and keep forging faster routes.
+        </p>
+        <Link
+          href="/dashboard"
+          className="mt-5 inline-block rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition hover:bg-accent/90"
+        >
+          Go to dashboard →
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       {!live && (
@@ -72,6 +93,7 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
         {plans.plans.map((plan, i) => {
           const featured = highlight[plan.id];
           const isFree = plan.id === "free";
+          const paypalPlanId = plans.paypal?.plans?.[plan.id];
           return (
             <motion.div
               key={plan.id}
@@ -113,7 +135,15 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
                   <Button variant="outline" className="w-full" disabled>
                     {live ? "Current plan" : "✓ Free while we're new"}
                   </Button>
-                ) : live ? (
+                ) : paypalPlanId ? (
+                  <PayPalSubscribeButton
+                    clientId={plans.paypal!.client_id}
+                    env={plans.paypal!.env}
+                    planId={paypalPlanId}
+                    tier={plan.id}
+                    onSuccess={() => setSuccess(plan.name)}
+                  />
+                ) : live && plans.billing_enabled && !plans.paypal ? (
                   <Button
                     variant={featured ? "accent" : "default"}
                     className="w-full"

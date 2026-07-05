@@ -27,6 +27,7 @@ class Subscription(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), default="active")
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String(128))
     stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String(128))
+    paypal_subscription_id: Mapped[Optional[str]] = mapped_column(String(128))
     # Usage counter for quota enforcement (reset monthly by a scheduled job).
     analyses_used: Mapped[int] = mapped_column(Integer, default=0)
     period_label: Mapped[Optional[str]] = mapped_column(String(16))  # e.g. "2026-06"

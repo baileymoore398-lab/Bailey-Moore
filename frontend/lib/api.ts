@@ -451,6 +451,14 @@ export async function startCheckout(plan: string, successUrl: string, cancelUrl:
   );
 }
 
+// Verify an approved PayPal subscription server-side and upgrade the plan.
+export async function confirmPaypal(subscriptionId: string, plan: string) {
+  return request<{ plan: string; status: string }>(
+    "/billing/paypal/confirm",
+    jsonBody({ subscription_id: subscriptionId, plan })
+  );
+}
+
 /* ----------------------------- Sharing / Replay ----------------------------- */
 
 export async function createShare(resourceType: string, resourceId: string) {

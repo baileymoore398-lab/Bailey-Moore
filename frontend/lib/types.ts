@@ -302,9 +302,16 @@ export interface PlanInfo {
   features: string[];
 }
 
+export interface PayPalConfig {
+  client_id: string;
+  env: string;
+  plans: Record<string, string>; // tier id -> PayPal plan_id
+}
+
 export interface BillingPlans {
   plans: PlanInfo[];
   billing_enabled: boolean;
+  paypal?: PayPalConfig | null;
 }
 
 /* ===================== Replay / heatmap ===================== */
