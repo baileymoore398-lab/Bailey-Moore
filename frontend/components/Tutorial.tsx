@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -169,7 +170,10 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
         className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -187,27 +191,39 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <div className="text-5xl">{step.icon}</div>
-          <h2 className="mt-4 text-2xl font-black tracking-tight">{step.title}</h2>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              <div className="text-5xl">{step.icon}</div>
+              <h2 className="mt-4 text-2xl font-black tracking-tight">
+                {step.title}
+              </h2>
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-accent">
-                What to do
+              <div className="mt-5 space-y-4">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                    What to do
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-white/90">
+                    {step.action}
+                  </p>
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted">
+                    Why it matters
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    {step.why}
+                  </p>
+                </div>
               </div>
-              <p className="mt-1 text-sm leading-relaxed text-white/90">
-                {step.action}
-              </p>
-            </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-muted">
-                Why it matters
-              </div>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                {step.why}
-              </p>
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Progress dots */}
@@ -251,7 +267,7 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>,
     document.body
   );

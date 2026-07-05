@@ -79,6 +79,20 @@
   }
 }
 
+/* Slowly breathing glow for the primary call-to-action. */
+@keyframes rf-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 24px -6px rgba(46, 207, 110, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 34px -2px rgba(46, 207, 110, 0.85);
+  }
+}
+.rf-breathe {
+  animation: rf-breathe 3.2s ease-in-out infinite;
+}
+
 /* Gentle content fade on full page load — makes every entry feel composed. */
 @keyframes rf-page-in {
   from {
@@ -95,6 +109,9 @@ main {
 }
 @media (prefers-reduced-motion: reduce) {
   main {
+    animation: none;
+  }
+  .rf-breathe {
     animation: none;
   }
   html {

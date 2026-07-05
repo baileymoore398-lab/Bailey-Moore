@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { clearSession, getSessionUser, type SessionUser } from "@/lib/auth";
 import { DONATE_URL } from "@/lib/site";
@@ -69,12 +70,17 @@ export function SiteNav() {
               href={l.href}
               className={cn(
                 "relative hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:block",
-                isActive(l.href)
-                  ? "text-accent after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent/70"
-                  : "text-muted hover:text-white"
+                isActive(l.href) ? "text-accent" : "text-muted hover:text-white"
               )}
             >
               {l.label}
+              {isActive(l.href) && (
+                <motion.span
+                  layoutId="nav-active-underline"
+                  className="absolute inset-x-3 bottom-0.5 h-0.5 rounded-full bg-accent/70"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                />
+              )}
             </Link>
           ))}
           <TutorialButton

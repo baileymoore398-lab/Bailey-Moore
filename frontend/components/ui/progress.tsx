@@ -1,4 +1,7 @@
+"use client";
+
 import * as React from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,12 +29,13 @@ export function Progress({
       )}
       {...props}
     >
-      <div
-        className={cn(
-          "h-full rounded-full bg-accent transition-all duration-500",
-          indicatorClassName
-        )}
-        style={{ width: `${clamped}%` }}
+      {/* Fills from zero when it scrolls into view. */}
+      <motion.div
+        className={cn("h-full rounded-full bg-accent", indicatorClassName)}
+        initial={{ width: 0 }}
+        whileInView={{ width: `${clamped}%` }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
       />
     </div>
   );

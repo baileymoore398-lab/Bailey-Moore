@@ -87,14 +87,36 @@ function HeroPreview() {
           <path d="M-10 60 Q160 20 330 65 T650 55" fill="none" stroke="#2c3322" strokeWidth="1.5" />
           <path d="M-10 130 Q160 90 330 135 T650 125" fill="none" stroke="#2c3322" strokeWidth="1.5" />
           <path d="M-10 200 Q160 160 330 205 T650 195" fill="none" stroke="#2c3322" strokeWidth="1.5" />
-          {/* route */}
-          <path
+          {/* route — draws itself in on load */}
+          <motion.path
             d="M60 190 L150 90 L260 130 L350 50 L450 110 L560 60"
             fill="none"
             stroke="url(#spd)"
             strokeWidth="5"
             strokeLinecap="round"
             strokeLinejoin="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2, ease: "easeInOut", delay: 0.4 }}
+          />
+          {/* a runner that endlessly retraces the course */}
+          <motion.circle
+            r="6"
+            fill="#2ecf6e"
+            style={{
+              offsetPath:
+                'path("M60 190 L150 90 L260 130 L350 50 L450 110 L560 60")',
+              filter: "drop-shadow(0 0 6px rgba(46,207,110,0.9))",
+            }}
+            initial={{ offsetDistance: "0%" }}
+            animate={{ offsetDistance: "100%" }}
+            transition={{
+              duration: 4,
+              ease: "easeInOut",
+              repeat: Infinity,
+              repeatType: "reverse",
+              delay: 2.2,
+            }}
           />
           {/* controls */}
           {[
@@ -114,10 +136,6 @@ function HeroPreview() {
           <path d="M60 178 L70 196 L50 196 Z" fill="#34d977" />
           {/* finish */}
           <rect x="552" y="52" width="16" height="16" rx="3" fill="#fff" />
-          {/* moving dot */}
-          <circle cx="350" cy="50" r="7" fill="#2ecf6e">
-            <animate attributeName="opacity" values="1;0.5;1" dur="1.6s" repeatCount="indefinite" />
-          </circle>
         </svg>
 
         <div className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4">
@@ -165,7 +183,7 @@ export default function LandingPage() {
             AI coach that tells you exactly how to improve.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3">
-            <Button variant="accent" size="lg" asChild>
+            <Button variant="accent" size="lg" className="rf-breathe" asChild>
               <Link href="/upload">Analyze a race →</Link>
             </Button>
             <Link
