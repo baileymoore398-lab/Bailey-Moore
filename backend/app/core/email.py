@@ -306,3 +306,40 @@ def send_password_reset_email(to: str, token: str) -> bool:
         f"{settings.FRONTEND_URL}"
     )
     return send_email(to, subject, html, text)
+
+
+def send_password_changed_email(to: str, name: str | None = None) -> bool:
+    """Security confirmation sent after a password is successfully changed."""
+    who = name or "there"
+    subject = "Your RouteForge password was changed"
+    body = (
+        f"Hi {who},<br><br>"
+        "This is a confirmation that the password for your "
+        "<b style=\"color:#ffffff\">RouteForge</b> account was just changed. "
+        "You can now sign in with your new password."
+    )
+    warn = f"""\
+<div style="margin:2px 0 4px;padding:14px 16px;background:rgba(249,115,22,0.08);
+  border:1px solid rgba(249,115,22,0.35);border-radius:12px;font-size:14px;line-height:1.55;color:{_TEXT}">
+  <b style="color:#f9a56b">Didn't change it?</b> Your account may be at risk —
+  <a href="{settings.FRONTEND_URL}/forgot-password" style="color:{_ACCENT};text-decoration:underline">reset your password</a>
+  right away to secure it.
+</div>"""
+    html = _wrap(
+        "Password changed",
+        body,
+        "Sign in",
+        f"{settings.FRONTEND_URL}/login",
+        preheader="Your RouteForge password was just changed.",
+        extra_html=warn,
+    )
+    text = (
+        f"Hi {who},\n\n"
+        "This confirms the password for your RouteForge account was just changed.\n"
+        f"Sign in: {settings.FRONTEND_URL}/login\n\n"
+        "Didn't change it? Reset your password immediately to secure your account:\n"
+        f"{settings.FRONTEND_URL}/forgot-password\n\n"
+        "— RouteForge\n"
+        f"{settings.FRONTEND_URL}"
+    )
+    return send_email(to, subject, html, text)

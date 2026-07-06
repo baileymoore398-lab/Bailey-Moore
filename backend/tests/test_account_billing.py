@@ -48,6 +48,28 @@ def test_password_reset_flow(app_client):
     assert r.status_code == 200
 
 
+def test_password_changed_email_sent_on_confirm(app_client):
+    """A successful reset fires the branded 'password changed' confirmation."""
+    from unittest.mock import patch
+
+    from app.config import settings
+
+    _register(app_client, "changed@example.com")
+    token = app_client.post(
+        "/api/v1/account/password-reset/request", json={"email": "changed@example.com"}
+    ).json()["reset_token"]
+    sent = []
+    with patch.object(settings, "RESEND_API_KEY", "re_test"), \
+         patch("app.api.v1.account.send_password_changed_email",
+               side_effect=lambda to, name=None: sent.append(to)):
+        r = app_client.post(
+            "/api/v1/account/password-reset/confirm",
+            json={"token": token, "new_password": "brandnewpass9"},
+        )
+    assert r.status_code == 200
+    assert sent == ["changed@example.com"]
+
+
 def test_gdpr_export_and_delete(app_client):
     h = _register(app_client, "gdpr@example.com")
     # Create some data.

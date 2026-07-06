@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core.deps import get_current_user, get_or_create_athlete
-from app.core.email import send_password_reset_email
+from app.core.email import send_password_changed_email, send_password_reset_email
 from app.core.security import (
     create_reset_token,
     decode_reset_token,
@@ -107,7 +107,11 @@ def request_password_reset(
 
 
 @router.post("/password-reset/confirm")
-def confirm_password_reset(body: PasswordResetConfirm, db: Session = Depends(get_db)):
+def confirm_password_reset(
+    body: PasswordResetConfirm,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     user_id = decode_reset_token(body.token)
     if not user_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired reset token")
@@ -117,6 +121,10 @@ def confirm_password_reset(body: PasswordResetConfirm, db: Session = Depends(get
     user.hashed_password = hash_password(body.new_password)
     db.add(AuditLog(user_id=user.id, action="password_reset", target_type="user", target_id=user.id))
     db.commit()
+    # Confirm the change by email (security best practice). Sent after the
+    # response; the email layer swallows its own errors.
+    if settings.email_enabled:
+        background.add_task(send_password_changed_email, user.email, user.full_name)
     return {"message": "Password updated successfully."}
 
 
