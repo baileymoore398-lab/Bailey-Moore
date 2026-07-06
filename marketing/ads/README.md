@@ -37,7 +37,8 @@ Edit copy or add new sizes, then run the matching generator:
 ```bash
 node marketing/ads/generate_ads.mjs      # 5 social images  → out/*.png
 node marketing/ads/generate_poster.mjs   # A4 poster + QR   → out/poster-a4.png
-node marketing/ads/generate_video.mjs    # reel/story video → out/routeforge-ad.mp4
+node marketing/ads/generate_video.mjs    # 7.6s reel      → out/routeforge-ad.mp4
+node marketing/ads/generate_video_long.mjs # 16.6s reel   → out/routeforge-ad-long.mp4
 ```
 
 Requirements (all preinstalled in the build/remote environment):
