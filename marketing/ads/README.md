@@ -11,6 +11,8 @@ accent `#2ecf6e`) and point at **routeforge.world**.
 | `out/03-landscape-banner.png` | 1200×630 | Facebook link preview, X/Twitter card, website banner |
 | `out/04-square-features.png` | 1080×1080 | Feed post — "what you get" grid |
 | `out/05-square-cta.png` | 1080×1080 | Launch / call-to-action post |
+| `out/routeforge-ad.mp4` | 1080×1920 · 7.6s | Instagram / TikTok reel or story video ad |
+| `out/poster-a4.png` | 2480×3508 (A4 @ 300dpi) | Printable flyer with scannable QR code |
 
 ## Suggested captions
 
@@ -29,11 +31,15 @@ accent `#2ecf6e`) and point at **routeforge.world**.
 
 ## Regenerating / editing
 
-Edit copy or add new sizes in `generate_ads.mjs`, then:
+Edit copy or add new sizes, then run the matching generator:
 
 ```bash
-node marketing/ads/generate_ads.mjs   # writes marketing/ads/out/*.png
+node marketing/ads/generate_ads.mjs      # 5 social images  → out/*.png
+node marketing/ads/generate_poster.mjs   # A4 poster + QR   → out/poster-a4.png
+node marketing/ads/generate_video.mjs    # reel/story video → out/routeforge-ad.mp4
 ```
 
-(The script imports Playwright + Chromium; both are preinstalled in the
-build/remote environment.)
+Requirements (all preinstalled in the build/remote environment):
+Playwright + Chromium, `qrcode` (poster QR), and a full `ffmpeg` with libx264
+(the video encoder). `npm install` inside `marketing/` restores the `qrcode`
+dependency if needed.
