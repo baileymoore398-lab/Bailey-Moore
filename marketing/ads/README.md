@@ -11,7 +11,8 @@ accent `#2ecf6e`) and point at **routeforge.world**.
 | `out/03-landscape-banner.png` | 1200×630 | Facebook link preview, X/Twitter card, website banner |
 | `out/04-square-features.png` | 1080×1080 | Feed post — "what you get" grid |
 | `out/05-square-cta.png` | 1080×1080 | Launch / call-to-action post |
-| `out/routeforge-ad.mp4` | 1080×1920 · 7.6s | Instagram / TikTok reel or story video ad |
+| `out/routeforge-ad.mp4` | 1080×1920 · 7.6s | Short reel/story video ad |
+| `out/routeforge-ad-long.mp4` | 1080×1920 · 16.6s | Longer reel with how-it-works + AI-coach story |
 | `out/poster-a4.png` | 2480×3508 (A4 @ 300dpi) | Printable flyer with scannable QR code |
 
 ## Suggested captions
