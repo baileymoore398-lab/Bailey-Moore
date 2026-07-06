@@ -9,6 +9,7 @@ from app.api.v1 import (
     billing,
     clubs,
     coach,
+    contact,
     events,
     feedback,
     files,
@@ -37,3 +38,4 @@ api_router.include_router(sharing.router)
 api_router.include_router(replay.router)
 api_router.include_router(billing.router)
 api_router.include_router(feedback.router)
+api_router.include_router(contact.router)

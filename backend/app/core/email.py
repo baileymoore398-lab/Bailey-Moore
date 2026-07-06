@@ -175,21 +175,24 @@ def _feature_row(icon: str, title: str, desc: str) -> str:
 </tr>"""
 
 
-def _send_via_resend(to: str, subject: str, html: str, text: str) -> bool:
+def _send_via_resend(to: str, subject: str, html: str, text: str, reply_to: str | None = None) -> bool:
     """Send via the Resend HTTP API. Returns True on a 2xx response."""
     import httpx
 
+    payload = {
+        "from": formataddr((settings.EMAIL_FROM_NAME, settings.email_from_addr)),
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }
+    if reply_to:
+        payload["reply_to"] = [reply_to]
     try:
         resp = httpx.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
-            json={
-                "from": formataddr((settings.EMAIL_FROM_NAME, settings.email_from_addr)),
-                "to": [to],
-                "subject": subject,
-                "html": html,
-                "text": text,
-            },
+            json=payload,
             timeout=20,
         )
         if resp.status_code // 100 == 2:
@@ -202,17 +205,19 @@ def _send_via_resend(to: str, subject: str, html: str, text: str) -> bool:
         return False
 
 
-def send_email(to: str, subject: str, html: str, text: str) -> bool:
+def send_email(to: str, subject: str, html: str, text: str, reply_to: str | None = None) -> bool:
     """Send one email via the configured transport (Resend → SMTP → log)."""
     if not settings.email_enabled:
         logger.info("[email disabled] to=%s | subject=%s\n%s", to, subject, text)
         return False
     if settings.RESEND_API_KEY:
-        return _send_via_resend(to, subject, html, text)
+        return _send_via_resend(to, subject, html, text, reply_to)
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = formataddr((settings.EMAIL_FROM_NAME, settings.email_from_addr))
     msg["To"] = to
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")
     try:
@@ -343,3 +348,130 @@ def send_password_changed_email(to: str, name: str | None = None) -> bool:
         f"{settings.FRONTEND_URL}"
     )
     return send_email(to, subject, html, text)
+
+
+# Membership tiers — copy kept here so the email layer has no import cycle with
+# the billing router. Mirrors the billing PLANS catalogue.
+_TIERS = {
+    "pro": ("Pro", "$9/mo", [
+        "Unlimited analyses", "AI coach + video export", "Heatmaps", "Public sharing"]),
+    "team": ("Team", "$29/mo", [
+        "Everything in Pro", "Coach dashboard", "Up to 15 athletes", "Team analytics"]),
+    "club": ("Club", "$79/mo", [
+        "Everything in Team", "Club dashboard", "Event hosting", "Unlimited members"]),
+}
+
+
+def send_membership_confirmation_email(to: str, name: str | None, tier: str) -> bool:
+    """Welcome email sent when a paid membership becomes active."""
+    label, price, perks = _TIERS.get(tier, (tier.title(), "", []))
+    who = name or "there"
+    subject = f"You're a RouteForge {label} member 🎉"
+    body = (
+        f"Hi {who},<br><br>"
+        f"Your <b style=\"color:{_ACCENT}\">{label}</b> membership is now active — "
+        "thank you for supporting RouteForge! Your account has been upgraded and "
+        "every feature below is unlocked right away."
+    )
+    perk_rows = "".join(
+        f'<tr><td style="padding:6px 0;font-size:15px;color:{_TEXT}">'
+        f'<span style="color:{_ACCENT};font-weight:800">✓</span>&nbsp;&nbsp;{p}</td></tr>'
+        for p in perks
+    )
+    plan_card = f"""\
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+  style="margin:4px 0;padding:20px 22px;background:rgba(46,207,110,0.06);
+  border:1px solid rgba(46,207,110,0.3);border-radius:14px">
+  <tr><td style="padding-bottom:8px">
+    <span style="font-size:18px;font-weight:800;color:#ffffff">RouteForge {label}</span>
+    <span style="font-size:14px;color:{_MUTE}">&nbsp;·&nbsp;{price}</span>
+  </td></tr>
+  <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{perk_rows}</table></td></tr>
+</table>"""
+    html = _wrap(
+        f"Welcome to {label} 🎉",
+        body,
+        "Go to your dashboard",
+        f"{settings.FRONTEND_URL}/dashboard",
+        preheader=f"Your RouteForge {label} membership is active — everything's unlocked.",
+        extra_html=plan_card
+        + f'<p style="margin:14px 0 0;font-size:13px;color:{_FAINT}">'
+        "Manage or cancel anytime from your PayPal account. Questions? Just reply to this email."
+        "</p>",
+    )
+    text = (
+        f"Hi {who},\n\n"
+        f"Your RouteForge {label} membership ({price}) is now active — thank you!\n\n"
+        "Unlocked:\n" + "".join(f"  - {p}\n" for p in perks) + "\n"
+        f"Go to your dashboard: {settings.FRONTEND_URL}/dashboard\n\n"
+        "Manage or cancel anytime from your PayPal account.\n\n"
+        "— RouteForge"
+    )
+    return send_email(to, subject, html, text)
+
+
+def send_contact_ack_email(to: str, name: str | None = None) -> bool:
+    """Branded auto-reply sent to someone who submits the contact form."""
+    who = name or "there"
+    subject = "We got your message — RouteForge"
+    body = (
+        f"Hi {who},<br><br>"
+        "Thanks for getting in touch with <b style=\"color:#ffffff\">RouteForge</b>. "
+        "We've received your message and a real person will get back to you as soon "
+        "as we can — usually within a day or two.<br><br>"
+        "In the meantime, you might find a quick answer in our FAQ."
+    )
+    html = _wrap(
+        "Message received 👍",
+        body,
+        "Browse the FAQ",
+        f"{settings.FRONTEND_URL}/faq",
+        preheader="Thanks for contacting RouteForge — we'll get back to you soon.",
+    )
+    text = (
+        f"Hi {who},\n\n"
+        "Thanks for getting in touch with RouteForge. We've received your message "
+        "and will get back to you as soon as we can (usually within a day or two).\n\n"
+        f"FAQ: {settings.FRONTEND_URL}/faq\n\n"
+        "— RouteForge\n"
+        f"{settings.FRONTEND_URL}"
+    )
+    return send_email(to, subject, html, text)
+
+
+def send_contact_notification_email(from_name: str, from_email: str | None, subject: str, message: str) -> bool:
+    """Notify the site owner of a new contact-form submission.
+
+    Sent to the configured admin address, with the sender set as Reply-To so a
+    reply goes straight back to them. Returns False if no admin email is set.
+    """
+    admins = sorted(settings.admin_emails)
+    if not admins:
+        return False
+    to = admins[0]
+    safe_msg = (message or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    reply = from_email or "(not provided)"
+    body = (
+        f"New message via the RouteForge contact form.<br><br>"
+        f"<b style=\"color:#ffffff\">From:</b> {from_name or '(no name)'}<br>"
+        f"<b style=\"color:#ffffff\">Email:</b> {reply}<br>"
+        f"<b style=\"color:#ffffff\">Subject:</b> {subject or '(none)'}<br><br>"
+        f'<div style="padding:14px 16px;background:rgba(255,255,255,0.03);'
+        f'border:1px solid {_BORDER};border-radius:12px;white-space:pre-wrap;'
+        f'font-size:15px;line-height:1.6;color:{_TEXT}">{safe_msg}</div>'
+    )
+    html = _wrap(
+        "New contact message",
+        body,
+        ("Reply to " + from_email) if from_email else None,
+        (f"mailto:{from_email}") if from_email else None,
+        preheader=f"{from_name or 'Someone'}: {(message or '')[:80]}",
+    )
+    text = (
+        "New RouteForge contact message\n\n"
+        f"From: {from_name or '(no name)'}\n"
+        f"Email: {reply}\n"
+        f"Subject: {subject or '(none)'}\n\n"
+        f"{message}\n"
+    )
+    return send_email(to, f"[Contact] {subject or from_name or 'New message'}", html, text, reply_to=from_email)

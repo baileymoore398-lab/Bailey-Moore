@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core.deps import get_current_user
+from app.core.email import send_membership_confirmation_email
 from app.database import get_db
 from app.models import Plan, Subscription, User
 
@@ -99,6 +100,7 @@ class PayPalConfirm(BaseModel):
 @router.post("/paypal/confirm")
 def paypal_confirm(
     body: PayPalConfirm,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -141,6 +143,12 @@ def paypal_confirm(
     sub.status = "active"
     sub.paypal_subscription_id = body.subscription_id
     db.commit()
+    # Send the branded "you're a member" email after responding; the email
+    # layer swallows its own errors so it never affects the upgrade.
+    if settings.email_enabled:
+        background.add_task(
+            send_membership_confirmation_email, user.email, user.full_name, sub.plan
+        )
     return {"plan": sub.plan, "status": "active"}
 
 

@@ -521,3 +521,22 @@ export async function getFeedbackSummary(): Promise<FeedbackSummary> {
 export async function listFeedback(): Promise<FeedbackRow[]> {
   return request<FeedbackRow[]>("/feedback");
 }
+
+/* ----------------------------- Contact ----------------------------- */
+
+// Submit the contact form. `delivered` is true when the backend actually
+// emailed the owner + auto-replied; false means email isn't configured, so
+// the caller should fall back to Formspree/mailto.
+export async function sendContactMessage(input: {
+  name?: string;
+  email?: string;
+  subject?: string;
+  message: string;
+}): Promise<{ ok: boolean; delivered: boolean }> {
+  return request("/contact", jsonBody({
+    name: input.name?.trim() || "",
+    email: input.email?.trim() || null,
+    subject: input.subject?.trim() || "",
+    message: input.message,
+  }));
+}

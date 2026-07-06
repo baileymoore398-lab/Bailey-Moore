@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CONTACT_EMAIL, FORMSPREE_URL } from "@/lib/site";
+import { sendContactMessage } from "@/lib/api";
 
 const inputCls =
   "w-full rounded-lg border border-border bg-bg-soft px-3 py-2 text-sm outline-none focus:border-accent";
@@ -31,47 +32,65 @@ export default function ContactPage() {
       `&body=${encodeURIComponent(body)}`;
   }
 
+  function clearForm() {
+    setName("");
+    setEmail("");
+    setSubject("");
+    setMessage("");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    // No endpoint configured → fall back to opening the email client.
-    if (!FORMSPREE_URL) {
-      openMailto();
-      setStatus("mailto");
-      return;
-    }
-
+    if (!message.trim()) return;
     setStatus("sending");
+
+    // 1) Try our own backend — sends a branded notification to us plus a
+    //    branded auto-reply to the sender. delivered=false means email isn't
+    //    configured server-side, so fall through to Formspree.
     try {
-      const res = await fetch(FORMSPREE_URL, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: (() => {
-          const fd = new FormData();
-          fd.append("name", name);
-          if (email) {
-            fd.append("email", email);
-            fd.append("_replyto", email);
-          }
-          fd.append(
-            "_subject",
-            subject.trim() || `RouteForge enquiry from ${name || "a user"}`
-          );
-          fd.append("message", message);
-          return fd;
-        })(),
-      });
-      if (!res.ok) throw new Error(`Form error ${res.status}`);
-      setStatus("sent");
-      setName("");
-      setEmail("");
-      setSubject("");
-      setMessage("");
+      const r = await sendContactMessage({ name, email, subject, message });
+      if (r.delivered) {
+        setStatus("sent");
+        clearForm();
+        return;
+      }
     } catch {
-      // Network/endpoint failure → let them send via their email client.
-      openMailto();
-      setStatus("error");
+      /* backend unreachable — fall through to Formspree/mailto */
     }
+
+    // 2) Fall back to Formspree if configured.
+    if (FORMSPREE_URL) {
+      try {
+        const res = await fetch(FORMSPREE_URL, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: (() => {
+            const fd = new FormData();
+            fd.append("name", name);
+            if (email) {
+              fd.append("email", email);
+              fd.append("_replyto", email);
+            }
+            fd.append(
+              "_subject",
+              subject.trim() || `RouteForge enquiry from ${name || "a user"}`
+            );
+            fd.append("message", message);
+            return fd;
+          })(),
+        });
+        if (!res.ok) throw new Error(`Form error ${res.status}`);
+        setStatus("sent");
+        clearForm();
+        return;
+      } catch {
+        /* fall through to mailto */
+      }
+    }
+
+    // 3) Last resort: open the user's email client.
+    openMailto();
+    setStatus("mailto");
   }
 
   const sending = status === "sending";
