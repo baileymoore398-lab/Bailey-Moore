@@ -54,6 +54,14 @@ const fadeUp = {
   }),
 };
 
+// Credibility strip under the hero — factual "works with" capabilities.
+const worksWith = [
+  "Strava import",
+  "WinSplits paste",
+  "GPX · FIT · TCX · KML",
+  "Orienteering · MTBO · Rogaine · Trail",
+];
+
 /** Product-style preview card: a speed-coloured route with controls + stats. */
 function HeroPreview() {
   return (
@@ -193,6 +201,23 @@ export default function LandingPage() {
               See a live demo
             </Link>
           </div>
+
+          {/* Trust strip — what it works with, no fake logos or numbers. */}
+          <div className="mt-10">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted/70">
+              Works with your gear
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+              {worksWith.map((w) => (
+                <span
+                  key={w}
+                  className="rounded-full border border-border bg-bg-card/50 px-3 py-1 text-xs font-medium text-muted"
+                >
+                  {w}
+                </span>
+              ))}
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -206,11 +231,20 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-12">
-        <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
-          How it works
-        </h2>
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+      <section className="py-14">
+        <div className="text-center">
+          <span className="eyebrow">Three steps</span>
+          <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+            From race to insight in minutes
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-muted">
+            No spreadsheets, no manual timing — upload once and get the full
+            picture.
+          </p>
+        </div>
+        <div className="relative mt-12 grid gap-4 sm:grid-cols-3">
+          {/* connector line behind the step badges (desktop) */}
+          <div className="pointer-events-none absolute inset-x-[16%] top-[46px] hidden h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent sm:block" />
           {steps.map((s, i) => (
             <motion.div
               key={s.n}
@@ -219,9 +253,9 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, margin: "-60px" }}
-              className="relative rounded-2xl border border-border bg-bg-card/70 p-6"
+              className="card-lift relative rounded-2xl border border-border bg-bg-card/70 p-6"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-lg font-black text-bg">
+              <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-accent to-[#1c9e57] text-lg font-black text-bg shadow-lg shadow-accent/20 ring-4 ring-bg">
                 {s.n}
               </span>
               <h3 className="mt-4 text-lg font-bold">{s.title}</h3>
@@ -232,8 +266,18 @@ export default function LandingPage() {
       </section>
 
       {/* Feature grid */}
-      <section className="py-12">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="py-14">
+        <div className="text-center">
+          <span className="eyebrow">Everything included</span>
+          <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+            Built to make you faster
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-muted">
+            Powerful analysis, an AI coach, and share-ready visuals — all in one
+            place.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
@@ -242,9 +286,11 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, margin: "-60px" }}
-              className="group rounded-2xl border border-border bg-bg-card/70 p-6 transition-colors hover:border-accent/40"
+              className="card-lift group rounded-2xl border border-border bg-bg-card/70 p-6"
             >
-              <div className="text-3xl">{f.icon}</div>
+              <div className="grid h-12 w-12 place-items-center rounded-xl border border-accent/20 bg-gradient-to-br from-accent/20 to-accent/5 text-2xl transition-transform duration-300 group-hover:scale-110">
+                {f.icon}
+              </div>
               <h3 className="mt-4 text-lg font-bold">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{f.body}</p>
             </motion.div>

@@ -77,6 +77,38 @@
   .stat-label {
     @apply text-xs uppercase tracking-wider text-muted;
   }
+  /* Small uppercase section label above a heading. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/10
+      px-3 py-1 text-xs font-semibold uppercase tracking-widest text-accent;
+  }
+  /* Consistent elevated card with a tasteful hover lift + accent glow. */
+  .card-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-lift:hover {
+    transform: translateY(-4px);
+    border-color: rgba(46, 207, 110, 0.45);
+    box-shadow:
+      0 18px 40px -18px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(46, 207, 110, 0.06),
+      0 10px 44px -20px rgba(46, 207, 110, 0.35);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-lift:hover {
+      transform: none;
+    }
+  }
+  /* Faint hairline gradient divider. */
+  .rule-gradient {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(46, 207, 110, 0.35),
+      transparent
+    );
+  }
 }
 
 /* Slowly breathing glow for the primary call-to-action. */
