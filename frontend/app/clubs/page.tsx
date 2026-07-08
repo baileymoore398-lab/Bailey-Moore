@@ -62,8 +62,9 @@ export default function ClubsPage() {
       {demo && <DemoNotice context="clubs data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Clubs</h1>
-          <p className="text-sm text-muted">
+          <span className="eyebrow">For clubs</span>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-white">Clubs</h1>
+          <p className="mt-1 text-muted">
             Club analytics, member rankings, and event participation.
           </p>
         </div>
@@ -82,7 +83,7 @@ export default function ClubsPage() {
           ) : (
             clubs.map((c) => (
               <Link key={c.id} href={`/clubs/${c.id}`}>
-                <Card className="transition-colors hover:border-accent/40">
+                <Card className="card-lift">
                   <CardContent className="flex items-center justify-between gap-4 py-4">
                     <div>
                       <h3 className="font-semibold text-white">{c.name}</h3>

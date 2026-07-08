@@ -64,8 +64,9 @@ export default function EventsPage() {
       {demo && <DemoNotice context="events data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Events</h1>
-          <p className="text-sm text-muted">
+          <span className="eyebrow">Compete</span>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-white">Events</h1>
+          <p className="mt-1 text-muted">
             Host multi-competitor events with leaderboards and synchronized replay.
           </p>
         </div>
@@ -85,7 +86,7 @@ export default function EventsPage() {
           ) : (
             events.map((ev) => (
               <Link key={ev.id} href={`/events/${ev.id}`}>
-                <Card className="transition-colors hover:border-accent/40">
+                <Card className="card-lift">
                   <CardContent className="flex items-center justify-between gap-4 py-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">

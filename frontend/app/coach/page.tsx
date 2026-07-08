@@ -106,10 +106,11 @@ export default function CoachPage() {
       {demo && <DemoNotice context="coach data" reason={demoReason} />}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <span className="eyebrow">For coaches</span>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
             Coach dashboard
           </h1>
-          <p className="text-sm text-muted">
+          <p className="mt-1 text-muted">
             Track athlete progress and leave coaching notes.
           </p>
         </div>

@@ -80,7 +80,8 @@ export default function TrainingPage() {
       {demo && <DemoNotice context="training data" reason={demoReason} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Training Centre</h1>
+          <span className="eyebrow">Training</span>
+          <h1 className="mt-3 text-3xl font-black tracking-tight">Training Centre</h1>
           <p className="mt-1 text-muted">
             {analytics.session_count} sessions logged
           </p>
@@ -155,7 +156,7 @@ export default function TrainingPage() {
             {analytics.personal_bests.map((pb) => (
               <div
                 key={pb.category}
-                className="rounded-xl border border-border bg-bg-soft/50 p-4"
+                className="card-lift rounded-xl border border-border bg-bg-soft/50 p-4"
               >
                 <div className="stat-label">
                   {pbLabels[pb.category] || pb.category.replace(/_/g, " ")}
