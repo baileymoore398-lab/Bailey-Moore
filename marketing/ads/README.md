@@ -13,6 +13,7 @@ accent `#2ecf6e`) and point at **routeforge.world**.
 | `out/05-square-cta.png` | 1080×1080 | Launch / call-to-action post |
 | `out/routeforge-ad.mp4` | 1080×1920 · 7.6s | Short reel/story video ad |
 | `out/routeforge-ad-long.mp4` | 1080×1920 · 16.6s | Longer reel with how-it-works + AI-coach story |
+| `out/routeforge-ad-30.mp4` | 1080×1920 · 30s | Full 30s story: hook → steps → replay → stat → coach → disciplines → CTA |
 | `out/poster-a4.png` | 2480×3508 (A4 @ 300dpi) | Printable flyer with scannable QR code |
 
 ## Suggested captions
