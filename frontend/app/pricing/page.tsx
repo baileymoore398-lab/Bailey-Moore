@@ -23,9 +23,7 @@ export default function PricingPage() {
   return (
     <div className="container-page py-16">
       <div className="mx-auto max-w-2xl text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
-          Membership
-        </span>
+        <span className="eyebrow">Membership</span>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
           Become a RouteForge member
         </h1>

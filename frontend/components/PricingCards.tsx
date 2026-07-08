@@ -101,10 +101,10 @@ export function PricingCards({ plans }: { plans: BillingPlans }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               className={cn(
-                "relative flex flex-col rounded-2xl border bg-bg-card/70 p-6",
+                "card-lift relative flex flex-col rounded-2xl border p-6",
                 featured
-                  ? "border-accent/60 shadow-[0_0_40px_-12px_rgba(46,207,110,0.5)]"
-                  : "border-border",
+                  ? "border-accent/60 bg-gradient-to-b from-accent/[0.07] to-bg-card/70 shadow-[0_0_40px_-12px_rgba(46,207,110,0.5)]"
+                  : "border-border bg-bg-card/70",
                 !live && !isFree && "opacity-90"
               )}
             >

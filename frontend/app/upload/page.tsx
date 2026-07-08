@@ -126,7 +126,8 @@ export default function UploadPage() {
       <div className="mx-auto max-w-3xl">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black tracking-tight">Analyze a race</h1>
+            <span className="eyebrow">New analysis</span>
+            <h1 className="mt-3 text-3xl font-black tracking-tight">Analyze a race</h1>
             <p className="mt-2 text-muted">
               Upload your map and GPS track. Splits are optional but unlock
               leg-by-leg ranking.

@@ -168,7 +168,7 @@ export default function DashboardPage() {
             initial="hidden"
             animate="show"
           >
-            <Card className="p-4">
+            <Card className="card-lift p-4">
               <div className="stat-value">
                 <CountUp value={st.value} suffix={st.suffix} />
               </div>
