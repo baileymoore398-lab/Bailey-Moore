@@ -16,6 +16,8 @@ accent `#2ecf6e`) and point at **routeforge.world**.
 | `out/routeforge-ad-30.mp4` | 1080×1920 · 30s | Full 30s story: hook → steps → replay → stat → coach → disciplines → CTA |
 | `out/routeforge-ad-30-voice.mp4` | 1080×1920 · 30s | Same 30s ad **with a timed voiceover** |
 | `out/routeforge-ad-30-music.mp4` | 1080×1920 · 30s | Same 30s ad **with a synthesized music bed** (no voice; royalty-free by construction — `generate_music.py`) |
+| `out/routeforge-teaser-30.mp4` | 1080×1920 · 30s | **Teaser** cut: domain blurred out behind a "🔒 Releasing soon" lock — for hype posts (silent) |
+| `out/routeforge-teaser-30-music.mp4` | 1080×1920 · 30s | Teaser **with the music bed** |
 | `out/poster-a4.png` | 2480×3508 (A4 @ 300dpi) | Printable flyer with scannable QR code |
 
 ## Suggested captions
