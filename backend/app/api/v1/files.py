@@ -49,10 +49,12 @@ def generate_video(
     user: Optional[User] = Depends(get_optional_user),
 ):
     race = db.get(Race, race_id)
-    if race is None or race.analysis is None or not race.analysis.track:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Race must be analyzed first")
-    # Rendering is expensive — only the race owner (or an admin) may trigger it.
+    if race is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Race not found")
+    # Rendering is expensive — authorize the owner BEFORE any other work.
     _authorize_race_write(race, user)
+    if race.analysis is None or not race.analysis.track:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Race must be analyzed first")
     from app.services.video.render import VideoSpec, render_replay_video
 
     controls = [
