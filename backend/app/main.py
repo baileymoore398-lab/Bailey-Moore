@@ -22,6 +22,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger("routeforge")
 
+# Error tracking (no-op unless SENTRY_DSN is set).
+if settings.SENTRY_DSN:
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.ENV,
+            traces_sample_rate=0.0,
+            send_default_pii=False,
+        )
+        logger.info("Sentry error tracking enabled")
+    except Exception:  # noqa: BLE001 — never let telemetry break startup
+        logger.exception("Sentry init failed")
+
 _docs_enabled = settings.ENV != "production"
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -94,7 +109,44 @@ def _startup():
 
 @app.get("/health", tags=["health"])
 def health():
-    return {"status": "ok", "service": settings.PROJECT_NAME, "env": settings.ENV}
+    """Readiness probe: verifies the database (and, best-effort, Redis).
+
+    Returns 503 when the database is unreachable so the platform can restart /
+    route around the instance instead of serving 500s. A Redis outage is
+    reported but does NOT fail the check — analysis falls back to inline
+    execution, so the API is still usable without the broker.
+    """
+    from sqlalchemy import text
+
+    from app.database import SessionLocal
+
+    checks: dict[str, str] = {}
+    healthy = True
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            checks["database"] = "ok"
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001
+        checks["database"] = "down"
+        healthy = False
+
+    try:
+        import redis
+
+        client = redis.from_url(settings.celery_broker, socket_connect_timeout=1)
+        client.ping()
+        checks["redis"] = "ok"
+    except Exception:  # noqa: BLE001 — non-fatal
+        checks["redis"] = "down"
+
+    body = {"status": "ok" if healthy else "degraded",
+            "service": settings.PROJECT_NAME, "env": settings.ENV, "checks": checks}
+    if not healthy:
+        return JSONResponse(status_code=503, content=body)
+    return body
 
 
 @app.get("/", tags=["health"])

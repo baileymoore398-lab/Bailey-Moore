@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import csv
 import io
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import List, Optional, TypedDict
+
+# defusedxml guards against entity-expansion ("billion laughs") DoS on
+# attacker-supplied GPX/TCX/KML. Its ``fromstring`` is a drop-in replacement.
+from defusedxml import ElementTree as ET
 
 
 class TrackPoint(TypedDict):
@@ -218,6 +221,10 @@ def parse_kml(data: bytes) -> List[TrackPoint]:
     return points
 
 
+# Guard against decompression bombs: a small KMZ can inflate to gigabytes.
+MAX_KML_UNCOMPRESSED = 128 * 1024 * 1024  # 128 MB
+
+
 def parse_kmz(data: bytes) -> List[TrackPoint]:
     """Parse a KMZ (a ZIP archive containing a KML document)."""
     import zipfile
@@ -231,7 +238,16 @@ def parse_kmz(data: bytes) -> List[TrackPoint]:
         )
         if kml_name is None:
             raise ValueError("KMZ archive contains no .kml file.")
-        return parse_kml(zf.read(kml_name))
+        # Reject before reading if the declared uncompressed size is huge.
+        info = zf.getinfo(kml_name)
+        if info.file_size > MAX_KML_UNCOMPRESSED:
+            raise ValueError("KMZ document is too large to process.")
+        # Stream with a hard cap so a lying header can't still exhaust memory.
+        with zf.open(kml_name) as fh:
+            kml_bytes = fh.read(MAX_KML_UNCOMPRESSED + 1)
+        if len(kml_bytes) > MAX_KML_UNCOMPRESSED:
+            raise ValueError("KMZ document is too large to process.")
+        return parse_kml(kml_bytes)
 
 
 def parse_geojson(data: bytes) -> List[TrackPoint]:

@@ -124,6 +124,14 @@ def _build_storage() -> StorageBackend:
             return S3Storage()
         except Exception as exc:  # pragma: no cover
             logger.warning("S3 init failed (%s); using local storage.", exc)
+    # On ephemeral hosts (Railway/Render) local disk is wiped on every redeploy,
+    # so uploaded maps/GPX/videos would be LOST. Warn loudly in production.
+    if settings.ENV == "production":
+        logger.warning(
+            "STORAGE FALLBACK: no S3 configured — using ephemeral local disk. "
+            "Uploaded files WILL be lost on every redeploy/restart. Configure "
+            "AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY (+ S3_BUCKET) to persist data."
+        )
     return LocalStorage(settings.LOCAL_STORAGE_DIR)
 
 

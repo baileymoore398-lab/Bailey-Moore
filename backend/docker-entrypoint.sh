@@ -25,7 +25,10 @@ fi
 # Web / API role.
 if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
   echo "[entrypoint] Running alembic migrations..."
-  alembic upgrade head || echo "[entrypoint] WARNING: alembic upgrade failed (continuing)"
+  # A failed migration must ABORT startup (set -e) rather than boot the API
+  # against a half-migrated schema — the platform then marks the deploy failed
+  # and rolls back instead of silently serving 500s.
+  alembic upgrade head
 fi
 
 echo "[entrypoint] Starting: $*"

@@ -17,8 +17,9 @@ from __future__ import annotations
 import csv
 import io
 import re
-import xml.etree.ElementTree as ET
 from typing import List, Optional
+
+from defusedxml import ElementTree as ET  # hardened against XML entity-expansion DoS
 
 
 def _localname(tag: str) -> str:

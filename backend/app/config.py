@@ -84,14 +84,20 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
 
+    # --- Observability ---
+    # Set SENTRY_DSN to enable error tracking (recommended in production, since
+    # local logs vanish on ephemeral hosts). Leave blank to disable.
+    SENTRY_DSN: str | None = None
+
     # --- Subscriptions / quotas ---
     FREE_PLAN_MONTHLY_ANALYSES: int = 5
 
     # --- Admin ---
     # Comma-separated emails granted admin/superuser access on sign-in — used to
-    # gate owner-only views such as the AI feedback results. Set this to your own
-    # email so only you can see the feedback dashboard.
-    ADMIN_EMAILS: str = "route.forge.official@gmail.com"
+    # gate owner-only views such as the AI feedback results. MUST be set
+    # explicitly in production (empty by default so that nobody becomes admin
+    # just by registering a hardcoded address). Set it to your own email.
+    ADMIN_EMAILS: str = ""
 
     @property
     def admin_emails(self) -> set[str]:

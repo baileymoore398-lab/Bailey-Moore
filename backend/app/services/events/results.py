@@ -6,9 +6,10 @@ time, and per-control cumulative + leg splits.
 """
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import List, Optional
+
+from defusedxml import ElementTree as ET  # hardened against XML entity-expansion DoS
 
 from app.services.splits.parser import _parse_clock
 
