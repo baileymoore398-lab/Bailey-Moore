@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Keep private/account areas out of search results.
-      disallow: ["/settings", "/athletes/", "/dashboard", "/s/"],
+      // Keep private/account/admin/diagnostic areas out of search results.
+      disallow: ["/settings", "/athletes/", "/dashboard", "/s/", "/admin", "/debug"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

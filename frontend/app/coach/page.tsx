@@ -13,7 +13,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DemoNotice } from "@/components/DemoNotice";
-import { CoachTrendCharts } from "@/components/CoachTrendCharts";
+import dynamic from "next/dynamic";
+// Lazy-load recharts-based charts so they're not in the initial bundle.
+const CoachTrendCharts = dynamic(
+  () => import("@/components/CoachTrendCharts").then((m) => m.CoachTrendCharts),
+  { ssr: false }
+);
 import { cn } from "@/lib/utils";
 
 interface CoachNote {

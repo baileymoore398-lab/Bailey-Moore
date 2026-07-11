@@ -107,14 +107,14 @@ export default function UploadPage() {
       await analyzeRace(race.id);
       router.push(`/races/${race.id}`);
     } catch (e) {
-      // Surface the real failure instead of silently showing the demo race.
+      // Show a friendly message to users; keep the technical detail in the
+      // console for whoever's debugging the deployment.
       const msg = (e as Error)?.message || "";
+      if (msg) console.error("Analyze failed:", msg);
       setGenError(
-        "Couldn't analyze your race — the app can't reach its backend API, so " +
-          "nothing was saved. Most likely NEXT_PUBLIC_API_URL isn't set on the " +
-          "Vercel project (or you set it but haven't redeployed), or the backend " +
-          "domain isn't in CORS_ORIGINS. Fix that, redeploy, and try again." +
-          (msg ? ` (Details: ${msg})` : "")
+        "We couldn't analyse your race just now — nothing was saved. Please " +
+          "check your connection and try again in a moment. If it keeps " +
+          "happening, let us know via the Contact page."
       );
     } finally {
       setGenerating(false);

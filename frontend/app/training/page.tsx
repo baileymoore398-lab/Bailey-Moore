@@ -4,7 +4,16 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DemoNotice } from "@/components/DemoNotice";
 import { UploadZone, type UploadState } from "@/components/UploadZone";
-import { VolumeBars, SpeedHrChart } from "@/components/VolumeCharts";
+import dynamic from "next/dynamic";
+// Lazy-load recharts-based charts so they're not in the initial bundle.
+const VolumeBars = dynamic(
+  () => import("@/components/VolumeCharts").then((m) => m.VolumeBars),
+  { ssr: false }
+);
+const SpeedHrChart = dynamic(
+  () => import("@/components/VolumeCharts").then((m) => m.SpeedHrChart),
+  { ssr: false }
+);
 import { LoadIndicator } from "@/components/LoadIndicator";
 import { GoalsPanel } from "@/components/GoalsPanel";
 import {

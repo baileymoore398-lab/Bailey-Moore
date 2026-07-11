@@ -138,6 +138,7 @@ export function TutorialButton({
 function TutorialModal({ onClose }: { onClose: () => void }) {
   const [i, setI] = React.useState(0);
   const [mounted, setMounted] = React.useState(false);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
   const step = STEPS[i];
   const isFirst = i === 0;
   const isLast = i === STEPS.length - 1;
@@ -149,19 +150,41 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight" && i < STEPS.length - 1) setI((v) => v + 1);
       if (e.key === "ArrowLeft" && i > 0) setI((v) => v - 1);
+      // Trap Tab focus within the dialog.
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [i, onClose]);
 
-  // Lock background scroll while the tutorial is open.
+  // Lock background scroll, move focus into the dialog, and restore it on close.
   React.useEffect(() => {
     const prev = document.body.style.overflow;
+    const prevFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
+      prevFocus?.focus?.();
     };
   }, []);
+
+  React.useEffect(() => {
+    if (mounted) dialogRef.current?.focus();
+  }, [mounted]);
 
   if (!mounted) return null;
 
@@ -171,10 +194,15 @@ function TutorialModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="How RouteForge works"
+        tabIndex={-1}
         initial={{ opacity: 0, scale: 0.94, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-5 py-3">

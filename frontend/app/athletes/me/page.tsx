@@ -1,13 +1,56 @@
+"use client";
+
+import * as React from "react";
 import { getAthlete } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScoreTrend, TimeLossTrend } from "@/components/AthleteTrends";
+import dynamic from "next/dynamic";
 import { formatDuration } from "@/lib/utils";
+import type { AthleteProfile } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// Lazy-load recharts-based charts so they're not in the initial bundle.
+const ScoreTrend = dynamic(
+  () => import("@/components/AthleteTrends").then((m) => m.ScoreTrend),
+  { ssr: false }
+);
+const TimeLossTrend = dynamic(
+  () => import("@/components/AthleteTrends").then((m) => m.TimeLossTrend),
+  { ssr: false }
+);
 
-export default async function AthleteProfilePage() {
-  const { data: athlete, demo } = await getAthlete();
+// Client component so the fetch carries the user's token (see races/[id]).
+export default function AthleteProfilePage() {
+  const [athlete, setAthlete] = React.useState<AthleteProfile | null>(null);
+  const [demo, setDemo] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, demo: isDemo } = await getAthlete();
+      if (!active) return;
+      setAthlete(data);
+      setDemo(isDemo);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading || !athlete) {
+    return (
+      <div className="container-page py-12">
+        <div className="h-10 w-52 animate-pulse rounded bg-bg-elevated" />
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-bg-elevated" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const s = athlete.stats;
 
   const stats = [
