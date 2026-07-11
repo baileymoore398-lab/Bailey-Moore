@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.serializers import analysis_to_out, race_to_out
 from app.core.deps import enforce_analysis_quota, get_optional_user
+from app.core.ratelimit import rate_limit
 from app.database import get_db
 from app.models import (
     GpsTrack,
@@ -54,6 +55,14 @@ def _authorize_race_write(race: Race, user: Optional[User]) -> None:
         )
 
 
+def _authorize_race_read(race: Race, user: Optional[User]) -> None:
+    """Reads follow the same rule as writes: an owned race is private to its
+    owner (or an admin). Anonymous races (signed-out demo uploads) stay public,
+    and public sharing goes through tokenized ``/share`` links, not this path.
+    """
+    _authorize_race_write(race, user)
+
+
 async def _read_upload(file: UploadFile) -> bytes:
     data = await file.read()
     if len(data) > MAX_UPLOAD_BYTES:
@@ -95,8 +104,14 @@ def list_races(
 
 
 @router.get("/{race_id}", response_model=RaceOut)
-def get_race(race_id: str, db: Session = Depends(get_db)):
-    return race_to_out(_get_race_or_404(race_id, db))
+def get_race(
+    race_id: str,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
+    race = _get_race_or_404(race_id, db)
+    _authorize_race_read(race, user)
+    return race_to_out(race)
 
 
 def _register_upload(db, race, user, kind, key, file, size):
@@ -273,7 +288,11 @@ def paste_splits(
     return UploadOut(id=race.split_set.id, kind="splits", filename="pasted", parsed=True)
 
 
-@router.post("/{race_id}/analyze", response_model=AnalyzeResponse)
+@router.post(
+    "/{race_id}/analyze",
+    response_model=AnalyzeResponse,
+    dependencies=[Depends(rate_limit(30, 3600, "analyze"))],
+)
 def analyze_race(
     race_id: str,
     background: bool = False,
@@ -294,7 +313,16 @@ def analyze_race(
         # Dispatch to Celery (runs eagerly in dev). Returns immediately.
         from app.workers.tasks import run_analysis_task
 
-        run_analysis_task.delay(race.id)
+        try:
+            run_analysis_task.delay(race.id)
+        except Exception as exc:  # noqa: BLE001 — broker (Redis) unreachable
+            logger.warning("Celery dispatch failed (%s); running analysis inline", exc)
+            from app.services.pipeline import run_analysis
+
+            analysis = run_analysis(race.id, db)
+            return AnalyzeResponse(
+                analysis_id=analysis.id, race_id=race.id, status=analysis.status
+            )
         return AnalyzeResponse(analysis_id="pending", race_id=race.id, status="processing")
 
     from app.services.pipeline import run_analysis
@@ -304,8 +332,13 @@ def analyze_race(
 
 
 @router.get("/{race_id}/analysis", response_model=AnalysisOut)
-def get_analysis(race_id: str, db: Session = Depends(get_db)):
+def get_analysis(
+    race_id: str,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
     race = _get_race_or_404(race_id, db)
+    _authorize_race_read(race, user)
     if race.analysis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No analysis yet for this race")
     return analysis_to_out(race.analysis, race)

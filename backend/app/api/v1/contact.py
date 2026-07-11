@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, EmailStr, Field
 
 from app.config import settings
@@ -16,6 +16,7 @@ from app.core.email import (
     send_contact_ack_email,
     send_contact_notification_email,
 )
+from app.core.ratelimit import rate_limit
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contact", tags=["contact"])
@@ -28,7 +29,7 @@ class ContactMessage(BaseModel):
     message: str = Field(min_length=1, max_length=5000)
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(rate_limit(5, 3600, "contact"))])
 def submit_contact(body: ContactMessage, background: BackgroundTasks):
     """Accept a contact-form message.
 

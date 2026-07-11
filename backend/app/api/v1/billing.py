@@ -132,10 +132,26 @@ def paypal_confirm(
             status.HTTP_400_BAD_REQUEST,
             f"Subscription is not active (status: {details.get('status')}).",
         )
+    # The tier MUST have a configured plan ID, and it must match — otherwise a
+    # tampered client could claim a plan it didn't pay for.
     expected_plan_id = settings.paypal_plan_ids.get(body.plan)
-    if expected_plan_id and details.get("plan_id") != expected_plan_id:
+    if not expected_plan_id or details.get("plan_id") != expected_plan_id:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "Subscription plan does not match tier."
+        )
+    # Anti-replay: a subscription can only ever belong to one account.
+    claimed = (
+        db.query(Subscription)
+        .filter(
+            Subscription.paypal_subscription_id == body.subscription_id,
+            Subscription.user_id != user.id,
+        )
+        .first()
+    )
+    if claimed is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This subscription is already linked to another account.",
         )
 
     sub = _get_or_create_sub(db, user)
@@ -215,14 +231,25 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
-    try:
-        if settings.STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(payload, sig, settings.STRIPE_WEBHOOK_SECRET)
-        else:
-            import json
+    if not settings.STRIPE_WEBHOOK_SECRET:
+        # Never process unverified events in production — a forged event could
+        # grant a paid plan. Only allow the unsigned dev shortcut outside prod.
+        if settings.ENV == "production":
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "Webhook signature verification is not configured.",
+            )
+        import json
+
+        try:
             event = json.loads(payload)
-    except Exception as exc:  # signature/parse failure
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid webhook: {exc}")
+        except Exception as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid webhook: {exc}")
+    else:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig, settings.STRIPE_WEBHOOK_SECRET)
+        except Exception as exc:  # signature/parse failure
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid webhook: {exc}")
 
     etype = event["type"] if isinstance(event, dict) else event.type
     data = (event["data"]["object"] if isinstance(event, dict) else event.data.object)

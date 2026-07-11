@@ -36,6 +36,20 @@ def _resolve_athlete(db, athlete_id, handle) -> Athlete:
     return athlete
 
 
+def _get_club_or_404(club_id: str, db: Session) -> Club:
+    club = db.get(Club, club_id)
+    if club is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
+    return club
+
+
+def _require_club_admin(club: Club, user: User) -> None:
+    if not (user.is_superuser or club.owner_user_id == user.id):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Only the club owner can manage this club."
+        )
+
+
 @router.post("")
 def create_club(body: ClubCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     club = Club(name=body.name, slug=_slugify(body.name), country=body.country,
@@ -61,9 +75,8 @@ def add_member(
     club_id: str, body: ClubMemberAdd, db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    club = db.get(Club, club_id)
-    if club is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
+    club = _get_club_or_404(club_id, db)
+    _require_club_admin(club, user)
     athlete = _resolve_athlete(db, body.athlete_id, body.athlete_handle)
     exists = db.query(ClubMembership).filter(
         ClubMembership.club_id == club_id, ClubMembership.athlete_id == athlete.id
@@ -75,10 +88,10 @@ def add_member(
 
 
 @router.get("/{club_id}/members")
-def list_members(club_id: str, db: Session = Depends(get_db)):
-    club = db.get(Club, club_id)
-    if club is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
+def list_members(
+    club_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    club = _get_club_or_404(club_id, db)
     out = []
     for m in club.memberships:
         a = db.get(Athlete, m.athlete_id)
@@ -89,10 +102,10 @@ def list_members(club_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{club_id}/analytics")
-def club_analytics(club_id: str, db: Session = Depends(get_db)):
-    club = db.get(Club, club_id)
-    if club is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
+def club_analytics(
+    club_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    club = _get_club_or_404(club_id, db)
     athlete_ids = [m.athlete_id for m in club.memberships]
     athletes = db.query(Athlete).filter(Athlete.id.in_(athlete_ids)).all() if athlete_ids else []
 

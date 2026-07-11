@@ -52,9 +52,18 @@ def test_anonymous_race_stays_open(app_client):
     assert r.status_code == 200
 
 
-def test_race_read_stays_public(app_client):
-    # Reads remain open so shared race links resolve.
+def test_owned_race_read_is_private(app_client):
+    # An owned race is private to its owner; strangers/anonymous get 403.
+    # (Public sharing goes through tokenized /share links, not this path.)
     a = _auth(app_client, "reader_owner@x.com")
+    b = _auth(app_client, "reader_intruder@x.com")
     race_id = _make_race(app_client, a)
-    r = app_client.get(f"/api/v1/races/{race_id}")  # no auth
-    assert r.status_code == 200
+    assert app_client.get(f"/api/v1/races/{race_id}").status_code == 403  # anon
+    assert app_client.get(f"/api/v1/races/{race_id}", headers=b).status_code == 403
+    assert app_client.get(f"/api/v1/races/{race_id}", headers=a).status_code == 200
+
+
+def test_anonymous_race_read_stays_public(app_client):
+    # A race with no owner (signed-out demo flow) stays readable by anyone.
+    race_id = _make_race(app_client)
+    assert app_client.get(f"/api/v1/races/{race_id}").status_code == 200

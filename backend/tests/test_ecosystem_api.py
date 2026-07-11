@@ -101,9 +101,20 @@ def test_coach_and_share_flow(app_client):
     athlete_id = prof["id"]
     assert athlete_id
 
-    # Coach links the athlete
+    # Coach requests to link the athlete — starts as pending (consent required).
     r = app_client.post("/api/v1/coach/athletes", headers=coach_h, json={"athlete_id": athlete_id})
     assert r.status_code == 200, r.text
+    assert r.json()["status"] == "pending"
+    # Until accepted, the coach can't see the athlete or their trends.
+    assert not any(a["athlete_id"] == athlete_id for a in app_client.get(
+        "/api/v1/coach/athletes", headers=coach_h).json())
+    assert app_client.get(
+        f"/api/v1/coach/athletes/{athlete_id}/trends", headers=coach_h).status_code == 403
+    # The athlete sees the pending request and accepts it.
+    reqs = app_client.get("/api/v1/coach/requests", headers=athlete_h).json()
+    assert len(reqs) == 1 and reqs[0]["athlete_id"] == athlete_id
+    assert app_client.post(
+        f"/api/v1/coach/requests/{reqs[0]['id']}/accept", headers=athlete_h).status_code == 200
     r = app_client.get("/api/v1/coach/athletes", headers=coach_h)
     assert any(a["athlete_id"] == athlete_id for a in r.json())
 
@@ -139,6 +150,11 @@ def test_club_flow(app_client):
     r = app_client.post(f"/api/v1/clubs/{club_id}/members", headers=h,
                         json={"athlete_id": member_athlete})
     assert r.status_code == 200
-    r = app_client.get(f"/api/v1/clubs/{club_id}/analytics")
+    # A non-owner can't add members (owner-only management).
+    assert app_client.post(f"/api/v1/clubs/{club_id}/members", headers=member_h,
+                           json={"athlete_id": member_athlete}).status_code == 403
+    # Analytics/members now require authentication (no anonymous disclosure).
+    assert app_client.get(f"/api/v1/clubs/{club_id}/analytics").status_code == 401
+    r = app_client.get(f"/api/v1/clubs/{club_id}/analytics", headers=h)
     assert r.status_code == 200
     assert r.json()["members"] >= 1

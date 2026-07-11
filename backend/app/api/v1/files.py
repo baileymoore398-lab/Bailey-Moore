@@ -1,11 +1,16 @@
 """Serve files from local storage (dev mode) and handle video generation."""
 from __future__ import annotations
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from app.api.v1.races import _authorize_race_write
+from app.core.deps import get_optional_user
+from app.core.ratelimit import rate_limit
 from app.database import get_db
-from app.models import Race
+from app.models import Race, User
 from app.schemas.schemas import VideoRequest
 from app.services.storage.store import LocalStorage, get_storage
 
@@ -30,11 +35,21 @@ def serve_file(key: str):
     return Response(content=data, media_type=_CONTENT_TYPES.get(ext, "application/octet-stream"))
 
 
-@router.post("/races/{race_id}/video")
-def generate_video(race_id: str, body: VideoRequest, db: Session = Depends(get_db)):
+@router.post(
+    "/races/{race_id}/video",
+    dependencies=[Depends(rate_limit(10, 3600, "video"))],
+)
+def generate_video(
+    race_id: str,
+    body: VideoRequest,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
     race = db.get(Race, race_id)
     if race is None or race.analysis is None or not race.analysis.track:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Race must be analyzed first")
+    # Rendering is expensive — only the race owner (or an admin) may trigger it.
+    _authorize_race_write(race, user)
     from app.services.video.render import VideoSpec, render_replay_video
 
     controls = [

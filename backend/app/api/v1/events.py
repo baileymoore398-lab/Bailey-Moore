@@ -37,6 +37,10 @@ def _event_out(event: Event) -> EventOut:
     )
 
 
+MAX_UPLOAD_BYTES = 60 * 1024 * 1024  # 60 MB per file
+MAX_BATCH_FILES = 200
+
+
 def _get_event_or_404(event_id: str, db: Session) -> Event:
     event = db.get(Event, event_id)
     if event is None:
@@ -45,6 +49,30 @@ def _get_event_or_404(event_id: str, db: Session) -> Event:
     if event is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
     return event
+
+
+def _require_event_organiser(event: Event, user: User) -> None:
+    if not (user.is_superuser or event.organiser_user_id == user.id):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Only the event organiser can do that."
+        )
+
+
+async def _read_capped(file: UploadFile) -> bytes:
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
+    return data
+
+
+def _authorize_event_read(event: Event, user: Optional[User]) -> None:
+    """Draft/private events are visible only to their organiser (or an admin);
+    public events are open."""
+    if event.is_public:
+        return
+    if user is not None and (user.is_superuser or event.organiser_user_id == user.id):
+        return
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
 
 
 @router.post("", response_model=EventOut, status_code=status.HTTP_201_CREATED)
@@ -74,8 +102,13 @@ def list_events(db: Session = Depends(get_db), user: Optional[User] = Depends(ge
 
 
 @router.get("/{event_id}", response_model=EventOut)
-def get_event(event_id: str, db: Session = Depends(get_db)):
-    return _event_out(_get_event_or_404(event_id, db))
+def get_event(
+    event_id: str, db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
+    event = _get_event_or_404(event_id, db)
+    _authorize_event_read(event, user)
+    return _event_out(event)
 
 
 @router.get("/{event_id}/entries", response_model=List[EventEntryOut])
@@ -101,7 +134,8 @@ async def upload_results(
     db: Session = Depends(get_db), user: User = Depends(get_current_user),
 ):
     event = _get_event_or_404(event_id, db)
-    data = await file.read()
+    _require_event_organiser(event, user)
+    data = await _read_capped(file)
     try:
         summary = ingest_results(event, file.filename or "results.xml", data, db)
     except ValueError as exc:
@@ -115,9 +149,15 @@ async def upload_gps_batch(
     db: Session = Depends(get_db), user: User = Depends(get_current_user),
 ):
     event = _get_event_or_404(event_id, db)
+    _require_event_organiser(event, user)
     if not event.entries:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload results before GPS tracks.")
-    payload = [(f.filename or "track.gpx", await f.read()) for f in files]
+    if len(files) > MAX_BATCH_FILES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"Too many files (max {MAX_BATCH_FILES}).",
+        )
+    payload = [(f.filename or "track.gpx", await _read_capped(f)) for f in files]
     result = ingest_gps_batch(event, payload, db)
     return {"event_id": event.id, **result}
 
@@ -127,6 +167,7 @@ def analyze_event(
     event_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user),
 ):
     event = _get_event_or_404(event_id, db)
+    _require_event_organiser(event, user)
     try:
         ea = build_event_analysis(event, db)
     except ValueError as exc:
@@ -135,8 +176,12 @@ def analyze_event(
 
 
 @router.get("/{event_id}/analysis")
-def get_event_analysis(event_id: str, course: Optional[str] = None, db: Session = Depends(get_db)):
+def get_event_analysis(
+    event_id: str, course: Optional[str] = None, db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
     event = _get_event_or_404(event_id, db)
+    _authorize_event_read(event, user)
     if event.analysis is None or event.analysis.status != "complete":
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event analysis not available yet")
     ea = event.analysis
@@ -156,6 +201,10 @@ def get_event_analysis(event_id: str, course: Optional[str] = None, db: Session 
 
 
 @router.get("/{event_id}/replay")
-def event_replay(event_id: str, course: Optional[str] = None, db: Session = Depends(get_db)):
+def event_replay(
+    event_id: str, course: Optional[str] = None, db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_user),
+):
     event = _get_event_or_404(event_id, db)
+    _authorize_event_read(event, user)
     return multi_replay_payload(event, db, course)

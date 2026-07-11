@@ -65,18 +65,73 @@ def link_athlete(
     body: LinkAthleteRequest, db: Session = Depends(get_db),
     coach: User = Depends(get_current_user),
 ):
+    """Request to coach an athlete. The link starts as **pending** — the athlete
+    must accept it before the coach can see their data — so a coach can't grant
+    themselves access to an arbitrary athlete's private results."""
     athlete = _resolve_athlete(db, body.athlete_id, body.athlete_handle)
     existing = db.query(CoachAthlete).filter(
         CoachAthlete.coach_user_id == coach.id, CoachAthlete.athlete_id == athlete.id
     ).one_or_none()
+    # If the coach IS the athlete's own user, auto-accept (self-coaching).
+    auto = athlete.user_id is not None and athlete.user_id == coach.id
     if existing:
-        existing.status = "active"
+        if existing.status != "active":
+            existing.status = "active" if auto else "pending"
+        status_val = existing.status
     else:
-        db.add(CoachAthlete(coach_user_id=coach.id, athlete_id=athlete.id, status="active"))
+        status_val = "active" if auto else "pending"
+        db.add(CoachAthlete(coach_user_id=coach.id, athlete_id=athlete.id, status=status_val))
     if coach.role == "athlete":
         coach.role = "coach"
     db.commit()
-    return {"coach_id": coach.id, "athlete_id": athlete.id, "status": "active"}
+    return {"coach_id": coach.id, "athlete_id": athlete.id, "status": status_val}
+
+
+@router.get("/requests")
+def list_coach_requests(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Pending coaching requests for the athlete profiles this user owns."""
+    my_athletes = {a.id for a in db.query(Athlete).filter(Athlete.user_id == user.id).all()}
+    if not my_athletes:
+        return []
+    links = db.query(CoachAthlete).filter(
+        CoachAthlete.athlete_id.in_(my_athletes),
+        CoachAthlete.status == "pending",
+    ).all()
+    out = []
+    for link in links:
+        coach_user = db.get(User, link.coach_user_id)
+        out.append({
+            "id": link.id, "coach_user_id": link.coach_user_id,
+            "coach_name": (coach_user.full_name or coach_user.email) if coach_user else None,
+            "athlete_id": link.athlete_id,
+        })
+    return out
+
+
+def _own_pending_link(link_id: str, db: Session, user: User) -> CoachAthlete:
+    link = db.get(CoachAthlete, link_id)
+    if link is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Request not found")
+    athlete = db.get(Athlete, link.athlete_id)
+    if athlete is None or athlete.user_id != user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not your athlete profile")
+    return link
+
+
+@router.post("/requests/{link_id}/accept")
+def accept_coach_request(link_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    link = _own_pending_link(link_id, db, user)
+    link.status = "active"
+    db.commit()
+    return {"id": link.id, "status": "active"}
+
+
+@router.post("/requests/{link_id}/decline")
+def decline_coach_request(link_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    link = _own_pending_link(link_id, db, user)
+    db.delete(link)
+    db.commit()
+    return {"id": link_id, "status": "declined"}
 
 
 @router.get("/athletes")

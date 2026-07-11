@@ -8,12 +8,12 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1.router import api_router
 from app.config import settings
+from app.core.ratelimit import limiter
 from app.database import init_db
 
 logging.basicConfig(
@@ -21,8 +21,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger("routeforge")
-
-limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIMIT_DEFAULT])
 
 _docs_enabled = settings.ENV != "production"
 app = FastAPI(
@@ -36,6 +34,8 @@ app = FastAPI(
     openapi_url="/openapi.json" if _docs_enabled else None,
 )
 app.state.limiter = limiter
+# Actually enforce the limits (attaching the limiter alone does nothing).
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS. Set CORS_ORIGINS to your frontend URL(s), or "*" to allow any origin
 # (handy while wiring up a deployment — auth uses Bearer tokens, not cookies, so

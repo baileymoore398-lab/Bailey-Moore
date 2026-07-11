@@ -19,10 +19,33 @@ def _share_url(token: str) -> str:
     return f"/s/{token}"
 
 
+def _authorize_share_resource(rtype: str, rid: str, db: Session, user: User) -> None:
+    """Only let a user share a resource they own (admins may share anything)."""
+    if user.is_superuser:
+        return
+    owned = False
+    if rtype == "race":
+        race = db.get(Race, rid)
+        owned = race is not None and race.owner_id == user.id
+    elif rtype == "event":
+        event = db.get(Event, rid)
+        owned = event is not None and event.organiser_user_id == user.id
+    elif rtype == "athlete":
+        from app.models import Athlete
+
+        athlete = db.get(Athlete, rid)
+        owned = athlete is not None and athlete.user_id == user.id
+    if not owned:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "You can only share resources you own."
+        )
+
+
 @router.post("", response_model=ShareOut)
 def create_share(body: ShareCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if body.resource_type not in _VALID:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid resource_type")
+    _authorize_share_resource(body.resource_type, body.resource_id, db, user)
     link = ShareLink(
         resource_type=body.resource_type, resource_id=body.resource_id,
         created_by=user.id, allow_embed=body.allow_embed,

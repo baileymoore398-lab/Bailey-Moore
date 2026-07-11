@@ -45,6 +45,19 @@ class Settings(BaseSettings):
 
     # --- Rate limiting ---
     RATE_LIMIT_DEFAULT: str = "120/minute"
+    # Master on/off (kept on except in the test suite, which sets ENV=test).
+    RATE_LIMIT_ENABLED: bool = True
+    # Optional shared backend so limits hold across multiple API instances.
+    # Set to your Redis URL in production (e.g. ${REDIS_URL}); blank = in-memory
+    # per-process counters (fine for a single instance / local dev).
+    RATE_LIMIT_STORAGE_URI: str | None = None
+
+    @field_validator("RATE_LIMIT_STORAGE_URI", mode="before")
+    @classmethod
+    def _blank_ratelimit_uri(cls, v):
+        if v is None or not str(v).strip():
+            return None
+        return str(v).strip()
 
     # --- Storage (S3 / MinIO) ---
     S3_ENDPOINT: str | None = None  # e.g. http://minio:9000 for local
