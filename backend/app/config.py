@@ -197,8 +197,10 @@ class Settings(BaseSettings):
     @field_validator("FRONTEND_URL", mode="before")
     @classmethod
     def _normalize_frontend_url(cls, v):
+        # Default to the real domain so email links are never localhost in prod
+        # if FRONTEND_URL is accidentally left unset. Override for local dev.
         if v is None or not str(v).strip():
-            return "http://localhost:3000"
+            return "https://routeforge.world"
         return str(v).strip().rstrip("/")
 
     @property

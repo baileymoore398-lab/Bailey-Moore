@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.deps import require_plan
 from app.database import get_db
 from app.models import Event, Race
 from app.services.events.ingest import multi_replay_payload
@@ -14,7 +15,10 @@ router = APIRouter(prefix="/replay", tags=["replay"])
 _MODES = {"density", "speed", "error"}
 
 
-@router.get("/races/{race_id}/heatmap")
+@router.get(
+    "/races/{race_id}/heatmap",
+    dependencies=[Depends(require_plan("pro"))],  # heatmaps are a Pro feature (once billing is live)
+)
 def race_heatmap(race_id: str, mode: str = "density", db: Session = Depends(get_db)):
     if mode not in _MODES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"mode must be one of {_MODES}")
@@ -32,7 +36,10 @@ def race_heatmap(race_id: str, mode: str = "density", db: Session = Depends(get_
     return build_heatmap([track], mode=mode)
 
 
-@router.get("/events/{event_id}/heatmap")
+@router.get(
+    "/events/{event_id}/heatmap",
+    dependencies=[Depends(require_plan("pro"))],
+)
 def event_heatmap(event_id: str, mode: str = "density", db: Session = Depends(get_db)):
     """Aggregate heatmap across all GPS-matched competitors in an event."""
     if mode not in {"density", "speed"}:

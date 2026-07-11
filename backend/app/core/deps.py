@@ -75,6 +75,41 @@ def _current_period() -> str:
     return f"{now.year}-{now.month:02d}"
 
 
+# Plan hierarchy for feature gating (higher index = more access).
+_PLAN_RANK = {"free": 0, "pro": 1, "team": 2, "club": 3}
+
+
+def user_plan(db: Session, user: Optional[User]) -> str:
+    if user is None:
+        return "free"
+    sub = db.query(Subscription).filter(Subscription.user_id == user.id).one_or_none()
+    return sub.plan if sub else "free"
+
+
+def require_plan(min_plan: str):
+    """Dependency factory: require at least ``min_plan`` for a paid feature.
+
+    A no-op while memberships aren't live (``memberships_live`` false) — so the
+    free/beta period is unaffected — but enforces the tier the moment billing is
+    switched on, keeping the pricing page's promises truthful.
+    """
+
+    def _checker(
+        user: Optional[User] = Depends(get_optional_user),
+        db: Session = Depends(get_db),
+    ) -> None:
+        if not settings.memberships_live:
+            return
+        have = _PLAN_RANK.get(user_plan(db, user), 0)
+        if have < _PLAN_RANK.get(min_plan, 99):
+            raise HTTPException(
+                status.HTTP_402_PAYMENT_REQUIRED,
+                f"This feature requires the {min_plan.title()} plan or higher.",
+            )
+
+    return _checker
+
+
 def enforce_analysis_quota(user: Optional[User], db: Session) -> None:
     """Enforce the free-plan monthly analysis quota.
 

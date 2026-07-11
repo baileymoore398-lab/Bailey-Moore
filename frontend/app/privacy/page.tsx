@@ -30,8 +30,9 @@ const SECTIONS: Section[] = [
         list: [
           "Account information: your email address, a securely hashed password, and (optionally) your name and athlete profile details such as display name, handle, country, and biography.",
           "Race and training content you upload: map photographs, GPS tracks (for example GPX, FIT, or TCX files), split times, and any race, event, club, or training details you choose to add.",
+          "Connected accounts: if you connect a third-party service such as Strava, we store the access and refresh tokens needed to import activities on your behalf, together with the activity data you choose to import. You can disconnect at any time.",
           "Derived analysis data: performance metrics, leg splits, route and mistake analysis, scores, and AI-generated coaching reports produced from the content you upload.",
-          "Payment information: if you purchase a paid plan, our payment processor collects and processes your payment details. We do not receive or store your full card number; we receive limited information such as your subscription status and the last four digits of your card.",
+          "Payment information: if you purchase a paid plan, our payment processor(s) (for example PayPal and, where enabled, Stripe) collect and process your payment details. We do not receive or store your full card number; we receive limited billing information such as your subscription status and identifier.",
           "Communications: the contents of messages you send us (for example via our contact form or by email) and our responses.",
           "Technical and usage data: information collected automatically when you use the Service, such as your IP address, device and browser type, pages viewed, and timestamps, together with diagnostic logs used to operate and secure the Service.",
         ],
@@ -87,7 +88,8 @@ const SECTIONS: Section[] = [
       { p: "We share personal data only as described below:" },
       {
         list: [
-          "Service providers (processors): trusted vendors who process data on our behalf under contract, including hosting and infrastructure providers, our AI processing provider, our payment processor, and our email delivery provider. They may only use the data to provide services to us.",
+          "Service providers (processors): trusted vendors who process data on our behalf under contract. These include our hosting and infrastructure providers (for example Vercel and Railway), our AI processing provider (OpenAI), our payment processors (PayPal and, where enabled, Stripe), our email delivery provider (Resend), and our contact-form/messaging provider (Formspree). They may only use the data to provide services to us.",
+          "Connected services you authorise: where you connect a third-party account such as Strava, we exchange data with that service to import your activities, subject to their own terms and privacy policy.",
           "Other users: information you choose to make public or share (for example a public athlete profile, a shared analysis link, or an event leaderboard) will be visible to others as you direct.",
           "Legal and safety: where required by law, regulation, legal process, or governmental request, or to protect the rights, property, or safety of RouteForge, our users, or the public.",
           "Business transfers: in connection with a merger, acquisition, financing, or sale of assets, in which case we will take reasonable steps to ensure your data remains protected.",

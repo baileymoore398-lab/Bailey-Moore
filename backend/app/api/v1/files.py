@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.races import _authorize_race_write
-from app.core.deps import get_optional_user
+from app.core.deps import get_optional_user, require_plan
 from app.core.ratelimit import rate_limit
 from app.database import get_db
 from app.models import Race, User
@@ -37,7 +37,10 @@ def serve_file(key: str):
 
 @router.post(
     "/races/{race_id}/video",
-    dependencies=[Depends(rate_limit(10, 3600, "video"))],
+    dependencies=[
+        Depends(rate_limit(10, 3600, "video")),
+        Depends(require_plan("pro")),  # video export is a Pro feature (once billing is live)
+    ],
 )
 def generate_video(
     race_id: str,
