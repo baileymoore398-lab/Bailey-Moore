@@ -5,7 +5,12 @@ const nextConfig = {
   // only needs .next/standalone + .next/static (no node_modules copy).
   output: "standalone",
   images: {
-    remotePatterns: [{ protocol: "http", hostname: "**" }, { protocol: "https", hostname: "**" }],
+    // Restrict to our own domain (the app uses inline SVG, so this is mostly
+    // future-proofing) rather than allowing any host over http/https.
+    remotePatterns: [
+      { protocol: "https", hostname: "routeforge.world" },
+      { protocol: "https", hostname: "*.routeforge.world" },
+    ],
   },
 };
 

@@ -56,9 +56,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    applicationCategory: "SportsApplication",
+    operatingSystem: "Web",
+    url: SITE_URL,
+    description,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  };
   return (
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="min-h-screen font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <AppShell>{children}</AppShell>
       </body>
     </html>

@@ -67,3 +67,27 @@ def test_anonymous_race_read_stays_public(app_client):
     # A race with no owner (signed-out demo flow) stays readable by anyone.
     race_id = _make_race(app_client)
     assert app_client.get(f"/api/v1/races/{race_id}").status_code == 200
+
+
+def _auth_h(app_client, email):
+    r = app_client.post("/api/v1/auth/register", json={"email": email, "password": "password123"})
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+def test_cannot_share_someone_elses_race(app_client):
+    owner = _auth_h(app_client, "share_owner@x.com")
+    other = _auth_h(app_client, "share_other@x.com")
+    race_id = _make_race(app_client, owner)
+    r = app_client.post("/api/v1/share", headers=other,
+                        json={"resource_type": "race", "resource_id": race_id})
+    assert r.status_code == 403
+
+
+def test_video_generation_requires_owner(app_client):
+    owner = _auth_h(app_client, "vid_owner@x.com")
+    other = _auth_h(app_client, "vid_other@x.com")
+    race_id = _make_race(app_client, owner)
+    # Non-owner is rejected before any (expensive) work — 403, not 400.
+    r = app_client.post(f"/api/v1/races/{race_id}/video", headers=other,
+                        json={"fmt": "square", "duration_s": 6})
+    assert r.status_code == 403
