@@ -29,3 +29,8 @@ export const SITE_URL = (
 
 // Display name used in legal copy.
 export const SITE_NAME = "RouteForge";
+
+// Creator's LinkedIn — linked from the footer credit.
+export const LINKEDIN_URL =
+  process.env.NEXT_PUBLIC_LINKEDIN_URL ||
+  "https://www.linkedin.com/in/bailey-moore-34571a300";

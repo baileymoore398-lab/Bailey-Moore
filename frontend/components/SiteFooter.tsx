@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DONATE_URL } from "@/lib/site";
+import { DONATE_URL, LINKEDIN_URL } from "@/lib/site";
 import { Logo } from "@/components/Logo";
 
 export function SiteFooter() {
@@ -52,7 +52,14 @@ export function SiteFooter() {
           </div>
           <p className="text-xs text-muted">
             AI race analysis &middot; built by{" "}
-            <span className="font-medium text-white">Bailey&nbsp;Moore</span>{" "}
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-white transition hover:text-accent hover:underline"
+            >
+              Bailey&nbsp;Moore
+            </a>{" "}
             &middot; &copy; {new Date().getFullYear()} RouteForge
           </p>
         </div>
