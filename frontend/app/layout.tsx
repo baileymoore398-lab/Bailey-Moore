@@ -4,6 +4,7 @@ import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AppShell } from "@/components/AppShell";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -74,6 +75,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <AppShell>{children}</AppShell>
+        <Analytics />
       </body>
     </html>
   );
